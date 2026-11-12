@@ -1,0 +1,173 @@
+<section class="cart-page">
+  <div class="container">
+    <div class="cart-header">
+      <div>
+        <span class="section-eyebrow">TU SELECCIÓN</span>
+        <h1>Mi carrito</h1>
+        <p class="cart-description">Revisa los productos que elegiste antes de continuar.</p>
+      </div>
+
+      @if (!ecommerce.isCartEmpty()) {
+        <span class="cart-count">
+          {{ ecommerce.cartTotalItems() }}
+          {{ ecommerce.cartTotalItems() === 1 ? 'producto' : 'productos' }}
+        </span>
+      }
+    </div>
+
+    @if (ecommerce.isCartEmpty()) {
+      <div class="empty-cart">
+        <div class="empty-cart-icon">
+          <svg class="shop-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 8h16l1 13H3L4 8ZM8 9V6a4 4 0 0 1 8 0v3"/></svg>
+        </div>
+
+        <h2>Tu carrito está vacío</h2>
+
+        <p>
+          Todavía no has agregado productos. Explora nuestro catálogo y encuentra algo para tu
+          espacio.
+        </p>
+
+        <a routerLink="/productos" class="btn-primary-custom">
+          Explorar productos
+          <svg class="shop-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 12h16m-6-6 6 6-6 6"/></svg>
+        </a>
+      </div>
+    } @else {
+      <div class="row g-4">
+        <!-- Lista de productos -->
+        <div class="col-lg-8">
+          <div class="cart-products">
+            <h2 class="visually-hidden">Productos en tu carrito</h2>
+
+            @for (item of ecommerce.cartItems(); track item.product.id_producto) {
+              <article class="cart-item">
+                <!-- Imagen -->
+                <div class="cart-item-image">
+                  <app-product-image [images]="item.product.imagenes" [alt]="item.product.nombre" />
+                </div>
+
+                <!-- Información -->
+                <div class="cart-item-info">
+                  <div class="cart-item-heading">
+                    <div>
+                      <span class="product-sku"> SKU: {{ item.product.sku }} </span>
+
+                      <h3>{{ item.product.nombre }}</h3>
+                    </div>
+                  </div>
+
+                  <span class="unit-price">
+                    {{ item.product.precio_base | currency: 'PEN' : 'symbol' : '1.2-2' : 'es-PE' }}
+                    <small>por unidad</small>
+                  </span>
+
+                  <!-- Cantidad -->
+                  <div class="cart-item-actions">
+                    <div class="quantity-field">
+                      <span class="quantity-label">Cantidad</span>
+                      <div
+                        class="quantity-control"
+                        role="group"
+                        [attr.aria-label]="'Cantidad de ' + item.product.nombre"
+                      >
+                        <button
+                          type="button"
+                          aria-label="Disminuir cantidad"
+                          [disabled]="item.quantity <= 1"
+                          (click)="decreaseQuantity(item)"
+                        >
+                          <svg class="shop-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14"/></svg>
+                        </button>
+
+                        <span aria-live="polite">{{ item.quantity }}</span>
+
+                        <button
+                          type="button"
+                          aria-label="Aumentar cantidad"
+                          [disabled]="item.quantity >= maxQuantity"
+                          (click)="increaseQuantity(item)"
+                        >
+                          <svg class="shop-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg>
+                        </button>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      class="remove-product"
+                      [attr.aria-label]="'Eliminar ' + item.product.nombre"
+                      (click)="removeProduct(item)"
+                    >
+                      <svg class="shop-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14M10 10v7m4-7v7"/></svg>
+                      Eliminar
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Subtotal -->
+                <div class="cart-item-subtotal">
+                  <small>Subtotal</small>
+                  <span>
+                    {{ getLineSubtotal(item) | currency: 'PEN' : 'symbol' : '1.2-2' : 'es-PE' }}
+                  </span>
+                </div>
+              </article>
+            }
+          </div>
+
+          <div class="cart-footer-actions">
+            <a routerLink="/productos" class="continue-shopping">
+              <svg class="shop-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M20 12H4m6-6-6 6 6 6"/></svg>
+              Seguir comprando
+            </a>
+
+            <button type="button" class="clear-cart" (click)="clearCart()">Vaciar carrito</button>
+          </div>
+        </div>
+
+        <!-- Resumen -->
+        <div class="col-lg-4">
+          <aside class="cart-summary">
+            <h2>Resumen del pedido</h2>
+
+            <div class="summary-row">
+              <span>Productos</span>
+              <span>{{ ecommerce.cartTotalItems() }}</span>
+            </div>
+
+            <div class="summary-row">
+              <span>Subtotal</span>
+              <span>
+                {{ ecommerce.cartSubtotal() | currency: 'PEN' : 'symbol' : '1.2-2' : 'es-PE' }}
+              </span>
+            </div>
+
+            <div class="summary-divider"></div>
+
+            <div class="summary-total">
+              <span>Total de productos</span>
+              <strong>
+                {{ ecommerce.cartSubtotal() | currency: 'PEN' : 'symbol' : '1.2-2' : 'es-PE' }}
+              </strong>
+            </div>
+
+            <p class="summary-note">
+              El envío o recojo y el pago se coordinan por WhatsApp. El total no incluye envío.
+            </p>
+
+            <a routerLink="/checkout" class="checkout-button">
+              Continuar al checkout
+              <svg class="shop-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 12h16m-6-6 6 6-6 6"/></svg>
+            </a>
+
+            <div class="secure-note">
+              <svg class="shop-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M21 11.6a9 9 0 0 1-13 8.1L3 21l1.3-4.9A9 9 0 1 1 21 11.6ZM8 8c0 4 4 8 8 8l1-2-3-1-1 1-3-3 1-1-1-3Z"/></svg>
+              <span>Atención directa por WhatsApp</span>
+            </div>
+          </aside>
+        </div>
+      </div>
+    }
+  </div>
+</section>

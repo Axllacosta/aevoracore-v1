@@ -1,0 +1,33 @@
+<p>Estos datos se copiarán a los nuevos comprobantes. Se usarán las series locales B001 y F001.</p>
+@if (error()) {
+  <p-message severity="error">{{ error() }}</p-message>
+}
+@if (saved()) {
+  <p-message severity="success">Datos del negocio guardados.</p-message>
+}
+@if (loadFailed()) {
+  <p-button label="Reintentar carga" (onClick)="load()" />
+}
+<form [formGroup]="form" (ngSubmit)="save()">
+  <div class="field">
+    <label for="issuer-ruc">RUC *</label>
+    <input pInputText id="issuer-ruc" formControlName="ruc" maxlength="11" inputmode="numeric" />
+  </div>
+  <div class="field">
+    <label for="issuer-name">Razón social *</label>
+    <input pInputText id="issuer-name" formControlName="razon_social" maxlength="200" />
+  </div>
+  <div class="field">
+    <label for="issuer-address">Dirección *</label>
+    <textarea pTextarea id="issuer-address" formControlName="direccion" maxlength="500"></textarea>
+  </div>
+  @if (form.touched && form.invalid) {
+    <p class="form-error">Completa todos los datos y un RUC de 11 dígitos.</p>
+  }
+  <p-button
+    type="submit"
+    label="Guardar datos"
+    [loading]="busy()"
+    [disabled]="busy() || loadFailed()"
+  />
+</form>

@@ -1,0 +1,15 @@
+@if (currentUrl()) {
+  <img
+    [src]="currentUrl()"
+    [alt]="alt()"
+    [attr.loading]="priority() ? 'eager' : 'lazy'"
+    [attr.fetchpriority]="priority() ? 'high' : 'auto'"
+    [style.object-fit]="fit()"
+    decoding="async"
+    (error)="tryNextImage()"
+  />
+} @else {
+  <div class="image-placeholder" role="img" [attr.aria-label]="alt()">
+    <span>Imagen no disponible</span>
+  </div>
+}

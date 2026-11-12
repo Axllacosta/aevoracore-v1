@@ -1,0 +1,102 @@
+<div class="customer-create">
+  <header>
+    <h1>Crear cliente</h1>
+    <p>
+      Para personas naturales, registra DNI, nombres y teléfono. Para empresas, RUC y razón social.
+    </p>
+  </header>
+  <form class="customer-card" [formGroup]="form()" (ngSubmit)="save()">
+    <h2>Datos del cliente</h2>
+    @if (facade.operationError()) {
+      <p class="form-error" role="alert">{{ facade.operationError() }}</p>
+    }
+    <div class="customer-fields">
+      @for (field of visibleFields(); track field.key) {
+        <div class="customer-field">
+          <label [for]="'create-customer-' + field.key"
+            >{{ field.label }}{{ field.required ? ' *' : '' }}</label
+          >
+          @if (field.type === 'select') {
+            <p-select
+              [inputId]="'create-customer-' + field.key"
+              [formControlName]="field.key"
+              [options]="field.options?.() ?? []"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Persona natural"
+              appendTo="body"
+            />
+          } @else {
+            <input
+              pInputText
+              [id]="'create-customer-' + field.key"
+              [formControlName]="field.key"
+              [type]="field.type === 'email' ? 'email' : field.type === 'tel' ? 'tel' : 'text'"
+              [appCustomerInput]="field.input ?? null"
+              [attr.maxlength]="field.max ?? null"
+              [attr.inputmode]="field.input === 'digits' ? 'numeric' : null"
+              [attr.autocomplete]="
+                field.key === 'nombres'
+                  ? 'given-name'
+                  : field.key === 'apellidos'
+                    ? 'family-name'
+                    : field.key === 'telefono'
+                      ? 'tel-national'
+                      : field.key === 'correo'
+                        ? 'email'
+                        : 'off'
+              "
+              [placeholder]="
+                field.key === 'telefono'
+                  ? 'Ej. 987654321'
+                  : field.key === 'correo'
+                    ? 'Ej. cliente@correo.com'
+                    : ''
+              "
+              [attr.aria-invalid]="
+                form().controls[field.key].touched && form().controls[field.key].invalid
+              "
+              [attr.aria-describedby]="
+                form().controls[field.key].touched && form().controls[field.key].invalid
+                  ? 'customer-error-' + field.key
+                  : null
+              "
+            />
+          }
+          @if (form().controls[field.key].touched && form().controls[field.key].invalid) {
+            <small class="form-error" [id]="'customer-error-' + field.key">
+              @if (form().controls[field.key].hasError('required')) {
+                Este campo es obligatorio.
+              } @else if (field.key === 'telefono') {
+                Ingresa un teléfono de 9 dígitos.
+              } @else if (field.key === 'dni') {
+                El DNI debe tener 8 dígitos.
+              } @else if (field.key === 'ruc') {
+                El RUC debe tener 11 dígitos.
+              } @else if (field.key === 'correo') {
+                Ingresa un correo electrónico válido.
+              } @else if (field.key === 'razon_social' || field.key === 'direccion_fiscal') {
+                Revisa el texto ingresado; el máximo es de {{ field.max }} caracteres.
+              } @else {
+                Ingresa solo letras, espacios, guiones o apóstrofes, hasta 100 caracteres.
+              }
+            </small>
+          }
+        </div>
+      }
+    </div>
+    <div class="customer-actions">
+      <button
+        type="button"
+        class="button-secondary"
+        [disabled]="facade.saving()"
+        (click)="close()()"
+      >
+        Cancelar
+      </button>
+      <button type="submit" class="button-primary" [disabled]="facade.saving()">
+        {{ facade.saving() ? 'Guardando…' : 'Crear cliente' }}
+      </button>
+    </div>
+  </form>
+</div>

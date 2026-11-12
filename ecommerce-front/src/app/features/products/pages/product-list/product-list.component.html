@@ -1,0 +1,197 @@
+<section class="catalog-page">
+  <div class="container">
+    <header class="catalog-header">
+      <div>
+        <span class="catalog-eyebrow">EXPLORA NUESTRA COLECCIÓN</span>
+
+        <h1>{{ activeCategory()?.nombre ?? 'Nuestros productos' }}</h1>
+
+        <p>Encuentra opciones para organizar y transformar tus espacios.</p>
+      </div>
+    </header>
+
+    <div class="catalog-toolbar">
+      <label class="category-filter">
+        <span>Categoría</span>
+        <select (change)="changeCategory($event)" [disabled]="categories.loading()">
+          <option value="" [selected]="categoryId() === null">Todas las categorías</option>
+          @for (category of categories.categories(); track category.id_categoria) {
+            <option
+              [value]="category.id_categoria"
+              [selected]="categoryId() === category.id_categoria"
+            >
+              {{ category.nombre }}
+            </option>
+          }
+        </select>
+      </label>
+
+      @if (!ecommerce.isCatalogLoading() && !ecommerce.hasCatalogError()) {
+        <span class="results-count">
+          {{ ecommerce.catalogTotal() }}
+          {{ ecommerce.catalogTotal() === 1 ? 'producto' : 'productos' }}
+        </span>
+      }
+    </div>
+
+    @if (categoryId() || appliedSearch()) {
+      <div class="active-filters">
+        <p>
+          @if (appliedSearch()) {
+            Estos son los resultados de: <strong>“{{ appliedSearch() }}”</strong>
+          }
+          @if (categoryId()) {
+            {{ appliedSearch() ? 'en' : 'Categoría:' }}
+            <strong>{{ activeCategory()?.nombre ?? 'la categoría seleccionada' }}</strong>
+          }
+        </p>
+        <button type="button" (click)="clearFilters()">Limpiar filtros</button>
+      </div>
+    }
+
+    <div aria-live="polite" class="visually-hidden">
+      @if (!ecommerce.isCatalogLoading() && !ecommerce.hasCatalogError()) {
+        {{ ecommerce.catalogTotal() }} productos encontrados.
+      }
+    </div>
+
+    @if (ecommerce.isCatalogLoading()) {
+      <div class="row g-4">
+        @for (item of [1, 2, 3, 4, 5, 6, 7, 8]; track item) {
+          <div class="col-6 col-md-4 col-lg-3">
+            <div class="product-skeleton">
+              <div class="skeleton-image"></div>
+              <div class="skeleton-line"></div>
+              <div class="skeleton-line short"></div>
+            </div>
+          </div>
+        }
+      </div>
+    } @else if (ecommerce.hasCatalogError()) {
+      <div class="catalog-state">
+        <h2>No pudimos cargar el catálogo</h2>
+
+        <p>
+          {{ ecommerce.catalogError() }}
+        </p>
+
+        <button
+          type="button"
+          class="state-button"
+          (click)="loadProducts(appliedSearch(), ecommerce.catalogPage())"
+        >
+          Intentar nuevamente
+        </button>
+      </div>
+    } @else if (ecommerce.products().length === 0) {
+      <div class="catalog-state">
+        <h2>
+          {{
+            appliedSearch() || categoryId()
+              ? 'No encontramos resultados'
+              : 'Todavía no hay productos disponibles'
+          }}
+        </h2>
+
+        <p>
+          {{
+            appliedSearch() || categoryId()
+              ? 'Prueba con otro término o selecciona otra categoría.'
+              : 'Estamos preparando nuestro catálogo. Pronto encontrarás aquí nuestros productos.'
+          }}
+        </p>
+
+        @if (appliedSearch() || categoryId()) {
+          <button type="button" class="state-button" (click)="editSearch()">Editar búsqueda</button>
+          <button type="button" class="state-button" (click)="clearFilters()">
+            Ver todos los productos
+          </button>
+        }
+      </div>
+      @if (suggestionCategory(); as category) {
+        <section aria-label="Alternativas de la misma categoría" aria-live="polite">
+          @if (suggestionsLoading()) {
+            <p>Buscando alternativas en {{ category.nombre }}…</p>
+          } @else if (suggestionsError()) {
+            <p>
+              No pudimos cargar las alternativas. Puedes explorar la categoría o intentar
+              nuevamente.
+            </p>
+            <button
+              type="button"
+              class="state-button"
+              (click)="loadProducts(appliedSearch(), ecommerce.catalogPage())"
+            >
+              Reintentar
+            </button>
+          } @else if (suggestions().length) {
+            <h2>Productos que podrían interesarte</h2>
+            <p>
+              No encontramos “{{ appliedSearch() }}”. Estas son otras opciones de
+              {{ category.nombre }}.
+            </p>
+            <div class="row g-4">
+              @for (product of suggestions(); track product.id_producto) {
+                <div class="col-6 col-md-4 col-lg-3"><app-product-card [product]="product" /></div>
+              }
+            </div>
+          } @else {
+            <p>
+              Tampoco encontramos alternativas disponibles en {{ category.nombre }}. Puedes explorar
+              otras categorías.
+            </p>
+          }
+          <button type="button" class="state-button" (click)="viewSuggestionCategory()">
+            Ver toda la categoría {{ category.nombre }}
+          </button>
+        </section>
+      }
+    } @else {
+      <div class="row g-4">
+        @for (product of ecommerce.products(); track product.id_producto; let i = $index) {
+          <div class="col-6 col-md-4 col-lg-3">
+            <app-product-card [product]="product" [priority]="i < 4" />
+          </div>
+        }
+      </div>
+
+      @if (ecommerce.catalogTotalPages() > 1) {
+        <nav class="catalog-pagination" aria-label="Paginación del catálogo">
+          <button
+            type="button"
+            class="pagination-button"
+            aria-label="Página anterior"
+            [disabled]="ecommerce.catalogPage() <= 1"
+            (click)="changePage(ecommerce.catalogPage() - 1)"
+          >
+            <span aria-hidden="true">‹</span>
+          </button>
+
+          <div class="page-numbers">
+            @for (page of pages; track page) {
+              <button
+                type="button"
+                class="page-number"
+                [class.active]="page === ecommerce.catalogPage()"
+                [attr.aria-current]="page === ecommerce.catalogPage() ? 'page' : null"
+                (click)="changePage(page)"
+              >
+                {{ page }}
+              </button>
+            }
+          </div>
+
+          <button
+            type="button"
+            class="pagination-button"
+            aria-label="Página siguiente"
+            [disabled]="ecommerce.catalogPage() >= ecommerce.catalogTotalPages()"
+            (click)="changePage(ecommerce.catalogPage() + 1)"
+          >
+            <span aria-hidden="true">›</span>
+          </button>
+        </nav>
+      }
+    }
+  </div>
+</section>

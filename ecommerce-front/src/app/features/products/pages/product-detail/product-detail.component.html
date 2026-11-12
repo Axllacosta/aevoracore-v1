@@ -1,0 +1,154 @@
+<section class="product-detail-page">
+  <div class="container">
+    <!-- Breadcrumb -->
+    <nav class="product-breadcrumb" aria-label="Ruta de navegación">
+      <a routerLink="/">Inicio</a>
+      <span class="breadcrumb-separator">/</span>
+      <a routerLink="/productos">Productos</a>
+      @if (category(); as currentCategory) {
+        <span class="breadcrumb-separator">/</span>
+        <a
+          class="breadcrumb-current"
+          routerLink="/productos"
+          [queryParams]="{ category_id: currentCategory.id_categoria }"
+        >
+          {{ currentCategory.nombre }}
+        </a>
+      }
+    </nav>
+
+    <!-- Estado de carga -->
+    @if (loading()) {
+      <div class="product-state">
+        <div class="spinner-border" role="status">
+          <span class="visually-hidden">Cargando producto...</span>
+        </div>
+        <p>Cargando información del producto...</p>
+      </div>
+    }
+
+    <!-- Producto no disponible -->
+    @if (!loading() && unavailable()) {
+      <div class="product-state product-unavailable">
+        <div class="unavailable-icon">
+          <svg class="shop-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="m3 7 9-5 9 5v10l-9 5-9-5ZM3 7l9 5 9-5m-9 5v10"/></svg>
+        </div>
+
+        <h2>Producto no disponible</h2>
+
+        <p>No encontramos el producto que estás buscando o ya no se encuentra disponible.</p>
+
+        <a routerLink="/productos" class="back-button"> Volver a productos </a>
+      </div>
+    }
+
+    <!-- Producto disponible -->
+    @if (!loading() && !unavailable() && product(); as currentProduct) {
+      <div class="row g-4 g-lg-5 product-detail-row">
+        <!-- Galería -->
+        <div class="col-lg-6">
+          <app-product-gallery [images]="currentProduct.imagenes" [name]="currentProduct.nombre" />
+
+          @if (specifications().length) {
+            <section class="product-specifications" aria-labelledby="specifications-heading">
+              <h2 id="specifications-heading">Especificaciones</h2>
+              <div class="specifications-surface">
+                <table class="specifications-table">
+                  <caption class="visually-hidden">
+                    Características de
+                    {{
+                      currentProduct.nombre
+                    }}
+                  </caption>
+                  <tbody>
+                    @for (specification of specifications(); track specification.label) {
+                      <tr>
+                        <th scope="row">{{ specification.label }}</th>
+                        <td>{{ specification.value }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          }
+        </div>
+
+        <!-- Información -->
+        <div class="col-lg-6">
+          <div class="product-information">
+            <!-- Identificación y precio -->
+            <div class="product-heading">
+              <span class="product-sku"> SKU: {{ currentProduct.sku }} </span>
+
+              <h1 class="product-name">
+                {{ currentProduct.nombre }}
+              </h1>
+
+              <p class="product-price">
+                {{ currentProduct.precio_base | currency: 'PEN' : 'S/ ' : '1.2-2' : 'es-PE' }}
+              </p>
+              <p class="price-note">
+                Precios referenciales. Confirmamos el precio al consultar por WhatsApp.
+              </p>
+            </div>
+
+            <!-- Descripción -->
+            @if (currentProduct.descripcion) {
+              <div class="product-description">
+                <h2>Descripción</h2>
+
+                <p>
+                  {{ currentProduct.descripcion }}
+                </p>
+              </div>
+            }
+
+            <!-- Compra -->
+            <div class="purchase-section">
+              <div class="quantity-section">
+                <span class="quantity-label">Cantidad</span>
+
+                <div class="quantity-control">
+                  <button
+                    type="button"
+                    class="quantity-button"
+                    aria-label="Disminuir cantidad"
+                    [disabled]="quantity() <= 1"
+                    (click)="decreaseQuantity()"
+                  >
+                    <svg class="shop-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14"/></svg>
+                  </button>
+
+                  <span class="quantity-value">
+                    {{ quantity() }}
+                  </span>
+
+                  <button
+                    type="button"
+                    class="quantity-button"
+                    aria-label="Aumentar cantidad"
+                    [disabled]="quantity() >= 99"
+                    (click)="increaseQuantity()"
+                  >
+                    <svg class="shop-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <button type="button" class="add-to-cart-button" (click)="addToCart()">
+                <svg class="shop-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 8h16l1 13H3L4 8ZM8 9V6a4 4 0 0 1 8 0v3M9 15h6m-3-3v6"/></svg>
+                Agregar al carrito
+              </button>
+
+              <p class="purchase-note">
+                <svg class="shop-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M21 11.6a9 9 0 0 1-13 8.1L3 21l1.3-4.9A9 9 0 1 1 21 11.6ZM8 8c0 4 4 8 8 8l1-2-3-1-1 1-3-3 1-1-1-3Z"/></svg>
+                ¿Tienes alguna consulta? Contáctanos por WhatsApp.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</section>

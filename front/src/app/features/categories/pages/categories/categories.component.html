@@ -1,0 +1,295 @@
+<div class="page-header">
+  <div>
+    <h1>{{ title }}</h1>
+    <p class="subtitle">{{ description }}</p>
+  </div>
+</div>
+@if (lookupError()) {
+  <p-message severity="error"
+    >{{ lookupError() }} <p-button label="Reintentar" [text]="true" (onClick)="retryLookup()"
+  /></p-message>
+}
+<p-toolbar
+  ><ng-template #start
+    ><div class="actions">
+      <input
+        pInputText
+        aria-label="Buscar registros"
+        placeholder="Buscar por nombre o código"
+        [ngModel]="search()"
+        (ngModelChange)="search.set($event)"
+        (keydown.enter)="filter()"
+      /><p-select
+        ariaLabel="Estado"
+        [options]="statuses"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="active()"
+        (ngModelChange)="active.set($event); filter()"
+      />
+      @if (categoryOptions().length) {
+        <p-select
+          ariaLabel="Filtrar categoría"
+          placeholder="Todas las categorías"
+          [showClear]="true"
+          [options]="categoryOptions()"
+          optionLabel="label"
+          optionValue="value"
+          [ngModel]="category()"
+          (ngModelChange)="category.set($event); filter()"
+        />
+      }
+      <p-button class="catalog-search-button" label="Buscar" [outlined]="true" (onClick)="filter()"
+        ><ng-template #icon
+          ><i class="pi pi-search catalog-icon" aria-hidden="true"></i></ng-template
+      ></p-button></div
+  ></ng-template>
+  <ng-template #end>
+    <div class="actions">
+      <p-button [text]="true" ariaLabel="Actualizar listado" (onClick)="facade.load()"
+        ><ng-template #icon
+          ><i class="pi pi-refresh catalog-icon" aria-hidden="true"></i></ng-template
+      ></p-button>
+      @if (canManage()) {
+        <p-button class="catalog-create-button" [label]="'Crear ' + singular" (onClick)="create()"
+          ><ng-template #icon
+            ><i class="pi pi-plus catalog-icon" aria-hidden="true"></i></ng-template
+        ></p-button>
+      }
+    </div>
+  </ng-template>
+</p-toolbar>
+@if (facade.error()) {
+  <p-message severity="error">{{ facade.error() }}</p-message>
+}
+@if (facade.operationError() && !dialog()) {
+  <p-message severity="error">{{ facade.operationError() }}</p-message>
+}
+<p-table
+  [value]="facade.items()"
+  [loading]="facade.loading()"
+  [scrollable]="true"
+  [tableStyle]="{ 'min-width': '650px' }"
+  stripedRows
+>
+  <ng-template #header
+    ><tr>
+      @for (col of columns; track col.key) {
+        <th>{{ col.label }}</th>
+      }
+      <th>Estado</th>
+      <th class="catalog-actions-column">Acciones</th>
+    </tr></ng-template
+  >
+  <ng-template #body let-row
+    ><tr>
+      @for (col of columns; track col.key) {
+        <td>
+          @if (col.money) {
+            {{ value(row, col.key) | currency: 'PEN' : 'S/ ' : '1.2-2' }}
+          } @else {
+            {{ value(row, col.key) ?? '—' }}
+          }
+        </td>
+      }
+      <td>
+        <p-tag
+          [value]="row.activo ? 'Activo' : 'Inactivo'"
+          [severity]="row.activo ? 'success' : 'secondary'"
+        />
+      </td>
+      <td class="catalog-actions-column">
+        <div class="actions catalog-row-actions">
+          <p-button [text]="true" ariaLabel="Ver detalle" (onClick)="show(row)"
+            ><ng-template #icon
+              ><i
+                class="pi pi-eye catalog-icon catalog-icon-neutral"
+                aria-hidden="true"
+              ></i></ng-template
+          ></p-button>
+          @for (action of rowActions; track action.label) {
+            <p-button [ariaLabel]="action.label" [text]="true" (onClick)="action.run(row)"
+              ><ng-template #icon
+                ><i [class]="action.icon + ' catalog-icon'" aria-hidden="true"></i></ng-template
+            ></p-button>
+          }
+          @if (canManage()) {
+            <p-button
+              [text]="true"
+              ariaLabel="Editar"
+              [disabled]="facade.saving()"
+              (onClick)="edit(row)"
+              ><ng-template #icon
+                ><i
+                  class="pi pi-pencil catalog-icon catalog-icon-neutral"
+                  aria-hidden="true"
+                ></i></ng-template
+            ></p-button>
+            @if (row.activo) {
+              <p-button
+                severity="danger"
+                [text]="true"
+                ariaLabel="Desactivar"
+                [disabled]="facade.saving()"
+                (onClick)="deactivate(row)"
+                ><ng-template #icon
+                  ><i
+                    class="pi pi-ban catalog-icon catalog-icon-danger"
+                    aria-hidden="true"
+                  ></i></ng-template
+              ></p-button>
+            }
+          }
+        </div>
+      </td></tr
+  ></ng-template>
+  <ng-template #emptymessage
+    ><tr>
+      <td [attr.colspan]="columns.length + 2">
+        <div class="empty">No hay registros para estos filtros.</div>
+      </td>
+    </tr></ng-template
+  ></p-table
+>
+<p-paginator
+  [first]="(facade.page() - 1) * facade.pageSize()"
+  [rows]="facade.pageSize()"
+  [totalRecords]="facade.total()"
+  [rowsPerPageOptions]="[10, 20, 50]"
+  (onPageChange)="paginate($event)"
+/>
+<p-dialog
+  [header]="editing() ? 'Editar categoría' : 'Crear categoría'"
+  [visible]="dialog()"
+  (visibleChange)="dialog.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '740px', maxWidth: '96vw' }"
+  [contentStyle]="{ paddingBottom: '0' }"
+  [closable]="!facade.saving()"
+  [closeOnEscape]="!facade.saving()"
+>
+  <ng-template #header
+    ><h1 class="category-dialog-title">
+      {{ editing() ? 'Editar categoría' : 'Crear categoría' }}
+    </h1></ng-template
+  >
+  <div class="category-editor">
+    <header class="editor-header">
+      <p>
+        {{
+          editing()
+            ? 'Actualiza la información de esta categoría.'
+            : 'Organiza tus productos con una nueva categoría.'
+        }}
+      </p>
+    </header>
+    <form
+      class="editor-card"
+      [formGroup]="form"
+      (ngSubmit)="save()"
+      [attr.aria-busy]="facade.saving()"
+    >
+      <h2>Información de la categoría</h2>
+      @if (facade.operationError()) {
+        <p-message severity="error">{{ facade.operationError() }}</p-message>
+      }
+      <div class="field">
+        <label for="category-name">Nombre *</label>
+        <input
+          pInputText
+          id="category-name"
+          formControlName="nombre"
+          maxlength="100"
+          placeholder="Ej. Muebles de sala"
+          [attr.aria-invalid]="form.controls['nombre'].touched && form.controls['nombre'].invalid"
+          aria-describedby="category-name-help"
+        />
+        <small
+          id="category-name-help"
+          [class.form-error]="form.controls['nombre'].touched && form.controls['nombre'].invalid"
+        >
+          @if (form.controls['nombre'].touched && form.controls['nombre'].invalid) {
+            Ingresa un nombre válido de hasta 100 caracteres.
+          } @else {
+            Usa un nombre claro para identificar esta categoría.
+          }
+        </small>
+      </div>
+      <div class="field">
+        <label for="category-description">Descripción <span class="muted">(opcional)</span></label>
+        <textarea
+          pTextarea
+          id="category-description"
+          formControlName="descripcion"
+          rows="4"
+          placeholder="Describe qué productos pertenecen a esta categoría..."
+        ></textarea>
+      </div>
+      <footer class="editor-actions">
+        <button
+          type="button"
+          class="button-secondary"
+          [disabled]="facade.saving()"
+          (click)="dialog.set(false)"
+        >
+          Cancelar
+        </button>
+        <button type="submit" class="button-primary" [disabled]="facade.saving()">
+          {{ facade.saving() ? 'Guardando…' : editing() ? 'Guardar cambios' : 'Crear categoría' }}
+        </button>
+      </footer>
+    </form>
+  </div>
+</p-dialog>
+<p-dialog
+  header="Detalle de categoría"
+  [visible]="detailOpen()"
+  (visibleChange)="detailOpen.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '740px', maxWidth: '96vw' }"
+  [contentStyle]="{ paddingBottom: '0' }"
+>
+  <ng-template #header>
+    <h1 class="category-dialog-title">Detalle de categoría</h1>
+  </ng-template>
+  @if (detail(); as row) {
+    <div class="category-editor category-detail">
+      <section class="editor-card category-detail-card">
+        <header class="category-detail-heading">
+          <h2>{{ row.nombre }}</h2>
+          <p-tag
+            [value]="row.activo ? 'Activo' : 'Inactivo'"
+            [severity]="row.activo ? 'success' : 'secondary'"
+          />
+        </header>
+        <dl class="category-detail-fields">
+          <div class="category-detail-field">
+            <dt>Descripción</dt>
+            <dd class="category-detail-value">{{ row.descripcion || 'Sin descripción' }}</dd>
+          </div>
+        </dl>
+        <dl class="category-detail-dates">
+          <div class="category-detail-field">
+            <dt>Creado</dt>
+            <dd class="category-detail-value">
+              {{ value(row, 'created_at') | date: 'dd/MM/yyyy HH:mm' }}
+            </dd>
+          </div>
+          <div class="category-detail-field">
+            <dt>Actualizado</dt>
+            <dd class="category-detail-value">
+              {{ value(row, 'updated_at') | date: 'dd/MM/yyyy HH:mm' }}
+            </dd>
+          </div>
+        </dl>
+        <footer class="editor-actions">
+          <button type="button" class="button-secondary" (click)="detailOpen.set(false)">
+            Cerrar
+          </button>
+        </footer>
+      </section>
+    </div>
+  }
+</p-dialog>

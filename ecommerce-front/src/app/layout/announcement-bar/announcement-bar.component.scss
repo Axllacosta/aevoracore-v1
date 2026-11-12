@@ -1,0 +1,21 @@
+:host {
+  display: block;
+}
+
+.announcement-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 6px 16px;
+  background: var(--color-footer-bg);
+  color: #fff;
+
+  p {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    text-align: center;
+  }
+}

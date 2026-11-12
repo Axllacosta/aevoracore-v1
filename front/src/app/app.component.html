@@ -1,0 +1,30 @@
+<router-outlet />
+<p-toast />
+<p-confirmdialog
+  [draggable]="false"
+  [motionOptions]="{ disabled: true }"
+  [maskMotionOptions]="{ disabled: true }"
+/>
+<p-confirmdialog
+  key="deactivate"
+  styleClass="deactivation-confirm"
+  [draggable]="false"
+  [motionOptions]="{ disabled: true }"
+  [maskMotionOptions]="{ disabled: true }"
+  [style]="{ border: 'none' }"
+/>
+<p-confirmdialog
+  key="cancel-sale"
+  styleClass="sale-cancel-confirm"
+  [pt]="{
+    header: { style: { padding: '24px 24px 12px', gap: '16px' } },
+    title: { style: { margin: '0', fontSize: '24px', lineHeight: '1.3' } },
+    content: { style: { padding: '0 24px 24px' } },
+    message: { style: { fontSize: '14px', lineHeight: '1.6', whiteSpace: 'pre-line' } },
+    footer: { style: { padding: '0 24px 24px', gap: '12px', flexWrap: 'wrap' } },
+  }"
+  [draggable]="false"
+  [motionOptions]="{ disabled: true }"
+  [maskMotionOptions]="{ disabled: true }"
+  [style]="{ width: '560px', maxWidth: '96vw' }"
+/>

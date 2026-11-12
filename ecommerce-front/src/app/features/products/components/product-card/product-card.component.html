@@ -1,0 +1,22 @@
+<article class="product-card">
+  <a class="product-image" [routerLink]="['/productos', product().id_producto]">
+    <app-product-image
+      [images]="product().imagenes"
+      [alt]="product().nombre"
+      [priority]="priority()"
+      [thumbnail]="true"
+    />
+  </a>
+
+  <div class="product-information">
+    <a class="product-name" [routerLink]="['/productos', product().id_producto]">
+      {{ product().nombre }}
+    </a>
+
+    <p class="product-price">
+      {{ product().precio_base | currency: 'PEN' : 'S/ ' : '1.2-2' : 'es-PE' }}
+    </p>
+
+    <a class="view-button" [routerLink]="['/productos', product().id_producto]">Ver producto <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12h15m-6-6 6 6-6 6"/></svg></a>
+  </div>
+</article>

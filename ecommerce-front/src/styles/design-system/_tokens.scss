@@ -1,0 +1,30 @@
+:root {
+  --color-brand: #00aad6;
+  --color-brand-dark: #008eb5;
+  --color-brand-soft: #e6f8fc;
+  --color-brand-pale: #f4fcfe;
+
+  --color-text: #252a2d;
+  --color-muted: #68757b;
+
+  --color-border: #e4ecef;
+
+  --color-surface: #ffffff;
+  --color-surface-soft: #f7fafb;
+
+  --color-footer-bg: #252a2d;
+  --color-footer-text: #f7fafb;
+  --color-footer-muted: #c8d4d8;
+
+  --font-body: Google Sans Flex, sans-serif;
+  --font-display: Google Sans Flex, sans-serif;
+
+  --font-size-base: 1.0625rem;
+  --font-size-heading: clamp(2rem, 4vw, 3.5rem);
+
+  --radius-control: 999px;
+  --radius-card: 1.15rem;
+  --radius-media: 1rem;
+
+  --shadow-card: 0 8px 24px rgba(19, 61, 74, 0.08);
+}

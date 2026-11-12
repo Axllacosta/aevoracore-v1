@@ -1,0 +1,130 @@
+<header class="main-header">
+  <app-announcement-bar></app-announcement-bar>
+  <div class="container">
+    <div class="header-content">
+      <a class="brand" routerLink="/">
+        <img src="/assets/images/logo.png" alt="EDITH" />
+      </a>
+
+      <div class="search-area">
+        <form
+          class="search-box"
+          role="search"
+          (submit)="$event.preventDefault(); submitSearch(searchInput.value)"
+        >
+          <input
+            #searchInput
+            type="search"
+            placeholder="Buscar producto o categoría"
+            name="search"
+            maxlength="160"
+            list="header-search-categories"
+            autocomplete="off"
+            aria-label="Buscar por nombre de producto o categoría"
+            [value]="searchTerm()"
+            (input)="onSearchInput($event)"
+          />
+
+          <datalist id="header-search-categories">
+            @for (category of catalog.categories(); track category.id_categoria) {
+              <option [value]="category.nombre"></option>
+            }
+          </datalist>
+
+          <button
+            type="button"
+            class="voice-button"
+            (click)="openVoice(voiceDialog)"
+            [class.listening]="voice.listening()"
+            [attr.aria-pressed]="voice.listening()"
+            [attr.aria-label]="
+              voice.listening() ? 'Cancelar escucha' : 'Navegar por voz en español de Perú'
+            "
+            aria-controls="voice-feedback"
+            aria-haspopup="dialog"
+            title="Navegar por voz"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <rect x="9" y="2" width="6" height="12" rx="3" />
+              <path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8" />
+            </svg>
+          </button>
+          <button type="submit" aria-label="Buscar productos o categorías">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
+            </svg>
+          </button>
+        </form>
+      </div>
+
+      <button
+        type="button"
+        class="cart-button"
+        aria-label="Abrir carrito"
+        (click)="cartClick.emit()"
+      >
+        <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round">
+          <path d="M5 8h14l1 13H4L5 8Z M9 9V6a3 3 0 0 1 6 0v3"/>
+        </svg>
+        <span>Carrito</span>
+        <span class="cart-count">{{ cartCount() }}</span>
+      </button>
+    </div>
+  </div>
+  <app-navigation></app-navigation>
+</header>
+
+<dialog
+  #voiceDialog
+  id="voice-feedback"
+  class="voice-modal"
+  aria-labelledby="voice-title"
+  aria-describedby="voice-help"
+  (cancel)="voice.cancel()"
+  (close)="voice.cancel()"
+>
+  <button
+    type="button"
+    class="voice-close"
+    aria-label="Cerrar búsqueda por voz"
+    autofocus
+    (click)="closeVoice(voiceDialog)"
+  >
+    ×
+  </button>
+  <h2 id="voice-title">Navega con tu voz</h2>
+  <p id="voice-help">Di «cocina», «muebles», «abrir carrito» o «ir al inicio».</p>
+  @if (!voice.starting() && !voice.listening()) {
+  <p class="voice-message" role="status">{{ voice.message() }}</p>
+  <div class="voice-actions">
+    @for (category of voice.choices(); track category.id_categoria) {
+      <button type="button" (click)="voice.openCategory(category)">{{ category.nombre }}</button>
+    }
+    <button type="button" class="voice-primary" (click)="voice.start()">
+      {{ voice.listening() || voice.starting() ? 'Cancelar escucha' : 'Volver a intentar' }}
+    </button>
+    <button type="button" (click)="editVoiceSearch(); closeVoice(voiceDialog); searchInput.focus()">
+      Escribir o corregir búsqueda
+    </button>
+  </div>
+  }
+</dialog>

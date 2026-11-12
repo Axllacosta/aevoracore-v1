@@ -1,0 +1,88 @@
+@if (sale(); as s) {
+  <dl class="detail-grid">
+    @if (s.comprobante; as doc) {
+      <div>
+        <dt>Comprobante</dt>
+        <dd>{{ doc.tipo }} {{ doc.serie }}-{{ doc.correlativo.toString().padStart(8, '0') }}</dd>
+      </div>
+      <div>
+        <dt>Receptor</dt>
+        <dd>{{ doc.receptor_nombre }}</dd>
+      </div>
+    }
+    <div>
+      <dt>Venta</dt>
+      <dd>#{{ s.id_venta }}</dd>
+    </div>
+    <div>
+      <dt>Estado</dt>
+      <dd>
+        <p-tag [value]="s.estado" [severity]="s.estado === 'CONFIRMADA' ? 'success' : 'danger'" />
+      </dd>
+    </div>
+    <div>
+      <dt>Fecha</dt>
+      <dd>{{ s.fecha_hora | date: 'dd/MM/yyyy HH:mm' }}</dd>
+    </div>
+    <div>
+      <dt>Cliente</dt>
+      <dd>#{{ s.id_cliente }}</dd>
+    </div>
+    <div>
+      <dt>Registrada por</dt>
+      <dd>Usuario #{{ s.id_usuario }}</dd>
+    </div>
+    <div>
+      <dt>Canal</dt>
+      <dd>{{ s.canal_venta }}</dd>
+    </div>
+  </dl>
+  <p-table [value]="s.detalles" [scrollable]="true"
+    ><ng-template #header
+      ><tr>
+        <th>Producto ID</th>
+        <th>Cantidad</th>
+        <th>Precio base</th>
+        <th>Descuento (S/)</th>
+        <th>Total</th>
+      </tr></ng-template
+    ><ng-template #body let-row
+      ><tr>
+        <td>#{{ row.id_producto }}</td>
+        <td>{{ row.cantidad }}</td>
+        <td>{{ row.precio_unitario_base | currency: 'PEN' : 'S/ ' }}</td>
+        <td>{{ row.descuento_importe | currency: 'PEN' : 'S/ ' }}</td>
+        <td>{{ row.total_linea | currency: 'PEN' : 'S/ ' }}</td>
+      </tr></ng-template
+    ></p-table
+  >
+  <div class="panel my-3">
+    <p>
+      Subtotal: <strong>{{ s.subtotal | currency: 'PEN' : 'S/ ' }}</strong> · Descuento:
+      <strong>{{ s.descuento_total | currency: 'PEN' : 'S/ ' }}</strong>
+    </p>
+    <p class="stat">{{ s.total | currency: 'PEN' : 'S/ ' }}</p>
+    @for (payment of s.pagos; track payment.id_pago) {
+      <p>
+        Pago: {{ payment.medio_pago }} ·
+        <p-tag
+          [value]="payment.estado"
+          [severity]="payment.estado === 'REGISTRADO' ? 'success' : 'warn'"
+        />
+        · {{ payment.importe | currency: 'PEN' : 'S/ ' }}
+      </p>
+      @if (payment.estado === 'REVERTIDO') {
+        <p class="muted">
+          Reversión administrativa: {{ payment.fecha_reversion | date: 'dd/MM/yyyy HH:mm' }}.
+          {{ payment.motivo_reversion }}
+        </p>
+      }
+    }
+  </div>
+  @if (s.estado === 'CANCELADA') {
+    <p-message severity="warn"
+      >Cancelada el {{ s.fecha_cancelacion | date: 'dd/MM/yyyy HH:mm' }}:
+      {{ s.motivo_cancelacion }}. La reversión del pago es administrativa.</p-message
+    >
+  }
+}

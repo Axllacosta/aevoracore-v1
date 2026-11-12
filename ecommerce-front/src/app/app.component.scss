@@ -1,0 +1,44 @@
+:host {
+  --header-height: 166px;
+}
+
+main {
+  padding-top: var(--header-height);
+  min-height: calc(100vh - var(--header-height));
+}
+
+@media (max-width: 767px) {
+  :host {
+    --header-height: 208px;
+  }
+}
+
+.whatsapp-contact {
+  position: fixed;
+  right: calc(1rem + env(safe-area-inset-right));
+  bottom: calc(1rem + env(safe-area-inset-bottom));
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #137c50;
+  color: #fff;
+  transition: transform .18s ease, background-color .18s ease;
+
+  @media (hover: hover) {
+    &:hover {
+      transform: scale(1.09);
+      background: #0f6842;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &, &:hover {
+      transform: none;
+      transition: none;
+    }
+  }
+}

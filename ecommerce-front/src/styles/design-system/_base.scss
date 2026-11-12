@@ -1,0 +1,183 @@
+html,
+body {
+  min-height: 100%;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: var(--color-text);
+  background: var(--color-surface);
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+img,
+svg {
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+input,
+select,
+textarea,
+.form-control {
+  border-radius: var(--radius-control);
+}
+
+button {
+  cursor: pointer;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-brand) 30%, transparent);
+  outline-offset: 2px;
+}
+
+html {
+  font-size: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  color: var(--color-text);
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display);
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+
+a {
+  color: var(--color-brand);
+  text-decoration: none;
+}
+
+body {
+  background: var(--color-surface);
+}
+
+button,
+.btn,
+.form-control,
+input,
+select,
+textarea {
+  border-radius: var(--radius-control);
+}
+
+button,
+.btn {
+  font-weight: 500;
+}
+
+:where(
+  .product-card,
+  .cart-summary,
+  .order-card,
+  .confirmation-card,
+  .empty-cart,
+  .catalog-state,
+  .detail-state
+) {
+  border-radius: var(--radius-card);
+}
+
+:where(.product-image, .cart-item-image, .order-image, .main-image) {
+  overflow: hidden;
+  border-radius: var(--radius-media);
+}
+
+:where(.product-card, .cart-summary, .order-card, .confirmation-card) {
+  box-shadow: var(--shadow-card);
+}
+
+@supports (appearance: base-select) {
+  select, ::picker(select) {
+    appearance: base-select;
+  }
+
+  ::picker(select) {
+    margin-block: .35rem;
+    padding: .35rem;
+    border: 1px solid var(--color-border);
+    border-radius: 1rem;
+    background: var(--color-surface);
+    box-shadow: var(--shadow-card);
+  }
+
+  select option {
+    padding: .65rem .85rem;
+    border-radius: .65rem;
+    cursor: pointer;
+  }
+
+  select option:is(:checked, :focus-visible, :hover) {
+    background: var(--color-brand-soft);
+    color: #14596c;
+  }
+}
+
+.shop-icon {
+  width: 1.15em;
+  height: 1.15em;
+  flex-shrink: 0;
+  vertical-align: -.16em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.65;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%233d626c' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 8 5 5 5-5'/%3E%3C/svg%3E");
+  background-size: 1.1rem;
+  background-position: right .8rem center;
+  background-repeat: no-repeat;
+}
+
+@supports (appearance: base-select) {
+  select { appearance: base-select; }
+  select::picker-icon { display: none; }
+}

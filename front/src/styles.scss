@@ -1,0 +1,6 @@
+// Load vendor styles, shared defaults and PrimeNG overrides in this order.
+@use 'bootstrap/dist/css/bootstrap-grid.min.css';
+@use 'bootstrap/dist/css/bootstrap-utilities.min.css';
+@use 'primeicons/primeicons.css';
+@use './styles/shared';
+@use './styles/primeng';

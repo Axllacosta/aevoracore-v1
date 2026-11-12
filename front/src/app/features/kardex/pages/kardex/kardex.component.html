@@ -1,0 +1,147 @@
+<div class="page-header">
+  <div>
+    <h1>Kardex</h1>
+    <p class="subtitle">
+      Trazabilidad de inventario. Los movimientos históricos no se editan ni eliminan.
+    </p>
+  </div>
+</div>
+<p-toolbar class="kardex-toolbar">
+  <ng-template #start>
+    <div class="kardex-filters">
+      <div class="field mb-0">
+        <label for="product-filter">ID de producto</label
+        ><p-inputnumber
+          inputId="product-filter"
+          [ngModel]="product()"
+          (ngModelChange)="product.set($event)"
+          (keydown.enter)="filter()"
+          [min]="1"
+          [useGrouping]="false"
+        />
+      </div>
+      <div class="field mb-0">
+        <label for="user-filter">ID de usuario</label
+        ><p-inputnumber
+          inputId="user-filter"
+          [ngModel]="user()"
+          (ngModelChange)="user.set($event)"
+          (keydown.enter)="filter()"
+          [min]="1"
+          [useGrouping]="false"
+        />
+      </div>
+      <div class="field mb-0">
+        <label for="type-filter">Movimiento</label
+        ><p-select
+          inputId="type-filter"
+          [options]="types"
+          optionLabel="label"
+          optionValue="value"
+          [showClear]="true"
+          placeholder="Todos"
+          [ngModel]="type()"
+          (ngModelChange)="type.set($event)"
+        />
+      </div>
+      <div class="field mb-0">
+        <label for="from">Desde</label
+        ><p-datepicker
+          inputId="from"
+          [ngModel]="from()"
+          (ngModelChange)="from.set($event)"
+          dateFormat="dd/mm/yy"
+          [showIcon]="true"
+        />
+      </div>
+      <div class="field mb-0">
+        <label for="to">Hasta</label
+        ><p-datepicker
+          inputId="to"
+          [ngModel]="to()"
+          (ngModelChange)="to.set($event)"
+          dateFormat="dd/mm/yy"
+          [showIcon]="true"
+        />
+      </div>
+      <p-button label="Filtrar" icon="pi pi-filter" [outlined]="true" (onClick)="filter()" />
+    </div>
+  </ng-template>
+  <ng-template #end>
+    <p-button
+      icon="pi pi-refresh"
+      ariaLabel="Actualizar listado"
+      [text]="true"
+      (onClick)="facade.load()"
+    />
+  </ng-template>
+</p-toolbar>
+@if (filterError()) {
+  <p-message severity="warn">{{ filterError() }}</p-message>
+}
+@if (facade.error()) {
+  <p-message severity="error">{{ facade.error() }}</p-message>
+}
+<p-table
+  [value]="facade.items()"
+  [loading]="facade.loading()"
+  [scrollable]="true"
+  [tableStyle]="{ 'min-width': '1100px' }"
+  stripedRows
+  ><ng-template #header
+    ><tr>
+      <th>Fecha</th>
+      <th>Producto ID</th>
+      <th>Tipo</th>
+      <th>Dirección</th>
+      <th>Cantidad</th>
+      <th>Anterior</th>
+      <th>Posterior</th>
+      <th>Motivo</th>
+      <th>Usuario ID</th>
+      <th>Referencia</th>
+    </tr></ng-template
+  ><ng-template #body let-row
+    ><tr>
+      <td>{{ row.fecha_hora | date: 'dd/MM/yyyy HH:mm' }}</td>
+      <td>#{{ row.id_producto }}</td>
+      <td>
+        <p-tag
+          [value]="row.tipo_movimiento"
+          [severity]="
+            row.tipo_movimiento === 'ENTRADA'
+              ? 'success'
+              : row.tipo_movimiento === 'SALIDA'
+                ? 'warn'
+                : 'info'
+          "
+        />
+      </td>
+      <td>{{ row.direccion_ajuste ?? '—' }}</td>
+      <td>{{ row.cantidad }}</td>
+      <td>{{ row.stock_anterior }}</td>
+      <td>{{ row.stock_posterior }}</td>
+      <td>{{ row.motivo ?? '—' }}</td>
+      <td>#{{ row.id_usuario }}</td>
+      <td>
+        @if (row.id_venta_cancelada) {
+          Cancelación #{{ row.id_venta_cancelada }}
+        } @else if (row.id_detalle_venta) {
+          Detalle de venta #{{ row.id_detalle_venta }}
+        } @else {
+          Manual
+        }
+      </td>
+    </tr></ng-template
+  ><ng-template #emptymessage
+    ><tr>
+      <td colspan="10" class="empty">No hay movimientos para estos filtros.</td>
+    </tr></ng-template
+  ></p-table
+><p-paginator
+  [first]="(facade.page() - 1) * facade.pageSize()"
+  [rows]="facade.pageSize()"
+  [totalRecords]="facade.total()"
+  [rowsPerPageOptions]="[10, 20, 50]"
+  (onPageChange)="paginate($event)"
+/>

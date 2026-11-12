@@ -1,0 +1,457 @@
+<div class="page-header">
+  <div>
+    <h1>Punto de venta</h1>
+    <p class="subtitle">Selecciona productos, revisa los importes y confirma el pago completo.</p>
+  </div>
+</div>
+
+@if (facade.operation.error() && !reviewing()) {
+  <p-message severity="error">{{ facade.operation.error() }}</p-message>
+}
+@if (facade.stockError()) {
+  <p-message severity="warn"
+    >No se pudo consultar el stock. El servidor comprobará la disponibilidad al confirmar.
+    {{ facade.stockError() }}</p-message
+  >
+}
+<div class="row g-4">
+  <section class="col-xl-5">
+    <div class="panel">
+      <h2>Buscar productos</h2>
+      <div class="actions mb-3">
+        <input
+          pInputText
+          placeholder="Nombre o SKU"
+          aria-label="Buscar productos"
+          [ngModel]="search()"
+          (ngModelChange)="search.set($event)"
+          (keydown.enter)="filter()"
+        /><p-button icon="pi pi-search" ariaLabel="Buscar" [outlined]="true" (onClick)="filter()" />
+      </div>
+      @if (facade.catalog.error()) {
+        <p-message severity="error">{{ facade.catalog.error() }}</p-message>
+      }
+      <p-table [value]="facade.catalog.items()" [loading]="facade.catalog.loading()" stripedRows
+        ><ng-template #header
+          ><tr>
+            <th>Producto</th>
+            <th>Precio / Stock</th>
+            <th class="catalog-actions-column"><span class="visually-hidden">Acciones</span></th>
+          </tr></ng-template
+        ><ng-template #body let-product
+          ><tr>
+            <td>
+              <strong>{{ product.nombre }}</strong
+              ><br /><small class="muted">{{ product.sku }}</small>
+            </td>
+            <td>
+              {{ product.precio_base | currency: 'PEN' : 'S/ ' }}<br /><small class="muted"
+                >{{ facade.stocks()[product.id_producto] ?? 'Sin consultar' }} uds.
+                {{
+                  product.controlar_stock ? '· Exige stock' : '· Venta sin restricción de stock'
+                }}</small
+              >
+            </td>
+            <td class="catalog-actions-column">
+              <p-button
+                icon="pi pi-plus"
+                ariaLabel="Agregar producto"
+                [disabled]="
+                  facade.operation.saving() ||
+                  (product.controlar_stock && (facade.stocks()[product.id_producto] ?? 1) <= 0)
+                "
+                (onClick)="facade.add(product)"
+              />
+            </td></tr></ng-template
+        ><ng-template #emptymessage
+          ><tr>
+            <td colspan="3" class="empty">No hay productos disponibles para esta búsqueda.</td>
+          </tr></ng-template
+        ></p-table
+      ><p-paginator
+        [first]="(facade.catalog.page() - 1) * 12"
+        [rows]="12"
+        [totalRecords]="facade.catalog.total()"
+        (onPageChange)="paginate($event)"
+      />
+    </div>
+  </section>
+  <section class="col-xl-7">
+    <div class="panel">
+      <div class="page-header">
+        <h2>Venta en preparación</h2>
+        <p-button
+          label="Vaciar"
+          icon="pi pi-trash"
+          severity="secondary"
+          [text]="true"
+          [disabled]="!facade.lines.length || facade.operation.saving()"
+          (onClick)="clear()"
+        />
+      </div>
+      <form [formGroup]="facade.form" (ngSubmit)="review()">
+        @if (facade.customerError()) {
+          <p-message severity="error"
+            >{{ facade.customerError() }}
+            <p-button label="Reintentar" [text]="true" (onClick)="facade.loadCustomers()"
+          /></p-message>
+        }
+        <div class="field">
+          <label for="sale-customer">Cliente *</label>
+          <div class="customer-picker">
+            <p-select
+              inputId="sale-customer"
+              formControlName="id_cliente"
+              [options]="facade.customerOptions()"
+              optionLabel="label"
+              optionValue="value"
+              [filter]="true"
+              [loading]="facade.loadingCustomers()"
+              placeholder="Selecciona un cliente registrado"
+              appendTo="body"
+            />
+            <p-button
+              icon="pi pi-user-plus"
+              size="small"
+              severity="contrast"
+              [style]="{ background: '#000', borderColor: '#000', color: '#fff' }"
+              ariaLabel="Crear cliente"
+              title="Crear cliente"
+              [style]="{ width: '44px', height: '44px' }"
+              [disabled]="facade.operation.saving()"
+              (onClick)="creatingCustomer.set(true)"
+            />
+          </div>
+          <small
+            >Para una venta anónima, selecciona el cliente general registrado en el negocio.</small
+          >
+          @if (facade.form.controls.id_cliente.touched && facade.form.controls.id_cliente.invalid) {
+            <small class="form-error">Selecciona un cliente.</small>
+          }
+        </div>
+        <div class="row">
+          <div class="col-md-6 field">
+            <label for="document-type">Comprobante *</label>
+            <p-select
+              inputId="document-type"
+              formControlName="tipo_comprobante"
+              [options]="[
+                { label: 'Boleta', value: 'BOLETA' },
+                { label: 'Factura', value: 'FACTURA' },
+              ]"
+              optionLabel="label"
+              optionValue="value"
+            />
+            <small>Para factura, completa el RUC y la dirección fiscal del cliente.</small>
+          </div>
+          <div class="col-md-6 field">
+            <label for="channel">Canal de venta</label
+            ><p-select
+              inputId="channel"
+              formControlName="canal_venta"
+              [options]="channels"
+              optionLabel="label"
+              optionValue="value"
+            />
+          </div>
+        </div>
+        <h3 class="pos-section-title">Productos seleccionados</h3>
+        <div formArrayName="detalles">
+          @for (line of facade.lines.controls; track line; let i = $index) {
+            <div class="panel mb-3" [formGroupName]="i">
+              <div class="actions justify-content-between mb-3">
+                <strong>{{ line.controls.product.value.nombre }}</strong
+                ><p-button
+                  icon="pi pi-times"
+                  severity="secondary"
+                  [text]="true"
+                  ariaLabel="Quitar producto"
+                  [disabled]="facade.operation.saving()"
+                  (onClick)="facade.remove(i)"
+                />
+              </div>
+              <div class="row">
+                <div class="col-6 col-md-3 field">
+                  <label [for]="'qty-' + i">Cantidad</label
+                  ><p-inputnumber
+                    [inputId]="'qty-' + i"
+                    formControlName="cantidad"
+                    [min]="1"
+                    [maxFractionDigits]="0"
+                    [useGrouping]="false"
+                  />
+                </div>
+                <div class="col-6 col-md-3 field">
+                  <label [for]="'discount-mode-' + i">Tipo de descuento</label>
+                  <p-select
+                    [inputId]="'discount-mode-' + i"
+                    formControlName="tipo_descuento"
+                    [options]="discountModes"
+                    optionLabel="label"
+                    optionValue="value"
+                    (onChange)="facade.resetDiscount(i)"
+                  />
+                </div>
+                <div class="col-6 col-md-3 field">
+                  <label [for]="'discount-' + i">{{
+                    line.controls.tipo_descuento.value === 'IMPORTE'
+                      ? 'Descuento de la línea (S/)'
+                      : 'Descuento %'
+                  }}</label
+                  ><p-inputnumber
+                    [inputId]="'discount-' + i"
+                    formControlName="descuento"
+                    [min]="0"
+                    [max]="
+                      line.controls.tipo_descuento.value === 'PORCENTAJE'
+                        ? 100
+                        : +line.controls.product.value.precio_base * line.controls.cantidad.value
+                    "
+                    [maxFractionDigits]="2"
+                  />
+                </div>
+                <div class="col-6 col-md-3">
+                  <span class="muted">Total estimado</span>
+                  <p>
+                    <strong>{{ facade.lineTotal(i) | currency: 'PEN' : 'S/ ' }}</strong>
+                  </p>
+                </div>
+              </div>
+              @if (line.invalid && line.touched) {
+                <small class="form-error"
+                  >Usa una cantidad entera positiva y un descuento de hasta dos decimales, sin
+                  superar el 100% o el subtotal de la línea.</small
+                >
+              }
+            </div>
+          } @empty {
+            <div class="empty">
+              <i class="pi pi-shopping-cart"></i>
+              <p>Agrega productos para preparar una venta.</p>
+            </div>
+          }
+        </div>
+        <div class="panel mb-3">
+          <div class="actions justify-content-between">
+            <span>Subtotal estimado</span
+            ><strong>{{ facade.totals().subtotal / 100 | currency: 'PEN' : 'S/ ' }}</strong>
+          </div>
+          <div class="actions justify-content-between mt-2">
+            <span>Descuentos</span
+            ><strong>{{ facade.totals().discount / 100 | currency: 'PEN' : 'S/ ' }}</strong>
+          </div>
+          <hr />
+          <div class="actions justify-content-between">
+            <span>Total estimado</span
+            ><strong class="stat">{{
+              facade.totals().total / 100 | currency: 'PEN' : 'S/ '
+            }}</strong>
+          </div>
+          <small class="muted"
+            >Los importes definitivos y la disponibilidad se validan al confirmar.</small
+          >
+        </div>
+        <p-button
+          type="submit"
+          label="Procesar pago"
+          icon="pi pi-arrow-right"
+          [disabled]="!facade.lines.length || facade.operation.saving()"
+        />
+      </form>
+    </div>
+  </section>
+</div>
+@if (creatingCustomer()) {
+  <app-customer-create-dialog
+    [initialType]="
+      facade.form.controls.tipo_comprobante.value === 'FACTURA' ? 'JURIDICA' : 'NATURAL'
+    "
+    (created)="customerCreated($event)"
+    (closed)="creatingCustomer.set(false)"
+  />
+}
+<p-dialog
+  header="Procesar pago"
+  [visible]="reviewing()"
+  (visibleChange)="reviewing.set($event)"
+  [modal]="true"
+  [closable]="!facade.operation.saving()"
+  [closeOnEscape]="!facade.operation.saving()"
+  [style]="{ width: '960px', maxWidth: '96vw' }"
+  [draggable]="false"
+  [resizable]="false"
+  [contentStyle]="{ paddingBottom: '0' }"
+>
+  <div class="catalog-editor">
+    <form class="editor-card catalog-detail-card" [formGroup]="facade.form" (ngSubmit)="confirm()">
+      <header class="payment-heading">
+        <div>
+          <span class="muted">Total a cobrar</span>
+          <p class="stat">{{ facade.totals().total / 100 | currency: 'PEN' : 'S/ ' }}</p>
+        </div>
+        <p-tag [value]="facade.form.controls.tipo_comprobante.value" severity="contrast" />
+      </header>
+      <div class="payment-context">
+        @for (customer of facade.customerOptions(); track customer.value) {
+          @if (customer.value === facade.form.controls.id_cliente.value) {
+            <span><strong>Cliente:</strong> {{ customer.label }}</span>
+          }
+        }
+        <span
+          >{{ facade.lines.length }} productos · {{ facade.form.controls.canal_venta.value }}</span
+        >
+      </div>
+      <p class="muted">
+        Registra los importes recibidos. Los pagos deben sumar exactamente el total para generar el
+        comprobante.
+      </p>
+      @if (facade.operation.error()) {
+        <p-message severity="error">{{ facade.operation.error() }}</p-message>
+      }
+      <div
+        formArrayName="pagos"
+        class="payment-fields"
+        [attr.inert]="facade.operation.saving() ? '' : null"
+      >
+        <h2>Medios de pago</h2>
+        <p class="muted">
+          Distribuye el total entre uno o más medios de pago. Debe quedar pagado por completo.
+        </p>
+        @for (payment of facade.payments.controls; track payment; let i = $index) {
+          <div [formGroupName]="i" class="payment-row">
+            <div class="field">
+              <label [for]="'payment-' + i">Medio de pago</label>
+              <p-select
+                [inputId]="'payment-' + i"
+                formControlName="medio_pago"
+                appendTo="body"
+                [options]="payments"
+                optionLabel="label"
+                optionValue="value"
+              />
+            </div>
+            <div class="field">
+              <label [for]="'amount-' + i">Importe (S/)</label>
+              <p-inputnumber
+                [inputId]="'amount-' + i"
+                formControlName="importe"
+                [min]="0.01"
+                [maxFractionDigits]="2"
+                [minFractionDigits]="2"
+                [readonly]="facade.operation.saving()"
+              />
+              @if (payment.controls.importe.touched && payment.controls.importe.invalid) {
+                <small class="form-error"
+                  >Ingresa un importe positivo de hasta dos decimales.</small
+                >
+              }
+            </div>
+            <div class="payment-row-actions">
+              <p-button
+                label="Completar saldo"
+                [text]="true"
+                [disabled]="facade.operation.saving()"
+                (onClick)="facade.completePayment(i)"
+              />
+              <p-button
+                icon="pi pi-times"
+                ariaLabel="Quitar pago"
+                [text]="true"
+                [disabled]="facade.operation.saving() || facade.payments.length === 1"
+                (onClick)="facade.removePayment(i)"
+              />
+            </div>
+          </div>
+        }
+        <p-button
+          label="Agregar medio de pago"
+          icon="pi pi-plus"
+          [outlined]="true"
+          [disabled]="facade.operation.saving() || facade.payments.length >= 100"
+          (onClick)="facade.addPayment()"
+        />
+      </div>
+
+      <div class="payment-balance" aria-live="polite">
+        <div>
+          <span>Pagos registrados</span>
+          <strong>{{ facade.paid() / 100 | currency: 'PEN' : 'S/ ' }}</strong>
+        </div>
+        <div [class.balance-error]="facade.paymentBalance() < 0">
+          <span>{{ facade.paymentBalance() < 0 ? 'Excedente' : 'Saldo pendiente' }}</span>
+          <strong>{{
+            (facade.paymentBalance() < 0 ? -facade.paymentBalance() : facade.paymentBalance()) / 100
+              | currency: 'PEN' : 'S/ '
+          }}</strong>
+        </div>
+      </div>
+      @if (facade.paymentReady()) {
+        <p class="payment-feedback">
+          Los importes coinciden. Verifica que recibiste el pago antes de generar el comprobante.
+        </p>
+      } @else if (facade.paymentBalance() < 0) {
+        <p class="form-error">Los pagos superan el total. Ajusta los importes para continuar.</p>
+      } @else {
+        <p class="muted">
+          Completa el saldo pendiente e ingresa importes positivos de hasta dos decimales.
+        </p>
+      }
+      <footer class="editor-actions">
+        <button
+          type="button"
+          class="button-secondary"
+          [disabled]="facade.operation.saving()"
+          (click)="reviewing.set(false)"
+        >
+          Volver a la venta
+        </button>
+        <p-button
+          type="submit"
+          label="Generar comprobante"
+          icon="pi pi-check"
+          [loading]="facade.operation.saving()"
+          [disabled]="facade.operation.saving() || !facade.paymentReady()"
+        />
+      </footer>
+    </form>
+  </div>
+</p-dialog>
+<p-dialog
+  header="Venta registrada"
+  [visible]="!!facade.result() && !reviewing()"
+  (visibleChange)="!$event && newSale()"
+  [modal]="true"
+  [closable]="!facade.operation.saving()"
+  [closeOnEscape]="!facade.operation.saving()"
+  [style]="{ width: '1040px', maxWidth: '96vw' }"
+  [draggable]="false"
+  [resizable]="false"
+  [contentStyle]="{ paddingBottom: '0' }"
+>
+  <div class="catalog-editor">
+    <section class="editor-card catalog-detail-card">
+      @if (facade.result(); as sale) {
+        <p-message severity="success"
+          >La venta #{{ sale.id_venta }} se confirmó y su comprobante fue generado.</p-message
+        >
+        <app-sale-summary [sale]="sale" />
+        <footer class="editor-actions">
+          <p-button
+            label="Ir al historial de ventas"
+            severity="secondary"
+            [outlined]="true"
+            routerLink="/sales"
+            [disabled]="facade.operation.saving()"
+            (onClick)="newSale()"
+          />
+          <p-button
+            label="Generar nueva venta"
+            icon="pi pi-plus"
+            [disabled]="facade.operation.saving()"
+            (onClick)="newSale()"
+          />
+        </footer>
+      }
+    </section>
+  </div>
+</p-dialog>

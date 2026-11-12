@@ -1,0 +1,12 @@
+@if (loading()) {
+  <p role="status">Generando PDF…</p>
+}
+@if (error()) {
+  <p-message severity="error">{{ error() }}</p-message>
+  <p-button label="Reintentar" (onClick)="retry.update(increment)" />
+}
+@if (safeUrl(); as url) {
+  <p><a [href]="objectUrl()" [download]="filename()">Descargar PDF</a></p>
+  <iframe [src]="url" title="Comprobante de venta PDF" class="sale-pdf-frame"></iframe>
+  <small>Si tu navegador no muestra el documento, utiliza Descargar PDF.</small>
+}

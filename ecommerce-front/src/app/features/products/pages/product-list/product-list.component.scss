@@ -1,0 +1,219 @@
+.catalog-page {
+  min-height: 60vh;
+  padding: 4rem 0 6rem;
+  background-color: var(--color-surface);
+
+  .catalog-header {
+    margin-bottom: 3rem;
+
+    .catalog-eyebrow {
+      color: var(--color-brand-dark);
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.16em;
+    }
+
+    h1 {
+      margin: 1rem 0;
+      color: var(--color-text);
+      font-family: var(--font-display);
+      font-size: clamp(2.2rem, 4vw, 3.5rem);
+      font-weight: 400;
+    }
+
+    p {
+      color: var(--color-muted);
+      margin: 0;
+    }
+  }
+
+  .catalog-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+
+  .results-count {
+    color: var(--color-muted);
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+
+  .catalog-state {
+    padding: 5rem 1rem;
+    background-color: var(--color-surface);
+    text-align: center;
+
+    h2 {
+      color: var(--color-text);
+      font-family: var(--font-display);
+      font-size: 1.8rem;
+      font-weight: 400;
+    }
+
+    p {
+      color: var(--color-muted);
+      margin: 1rem 0 1.5rem;
+    }
+  }
+
+  .state-button {
+    padding: 0.8rem 1.5rem;
+    border: 1px solid var(--color-brand);
+    background-color: var(--color-brand);
+    color: #fff;
+
+    &:hover {
+      background-color: var(--color-brand-dark);
+    }
+  }
+
+  .product-skeleton {
+    .skeleton-image {
+      aspect-ratio: 4 / 5;
+      margin-bottom: 1rem;
+      background-color: var(--color-brand-pale);
+      animation: pulse 1.5s infinite;
+    }
+
+    .skeleton-line {
+      width: 80%;
+      height: 12px;
+      margin-bottom: 0.7rem;
+      background-color: var(--color-brand-pale);
+    }
+
+    .short {
+      width: 40%;
+    }
+  }
+
+  .catalog-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: .35rem;
+    margin-top: 4rem;
+  }
+
+  .page-numbers {
+    display: flex;
+    gap: 0.4rem;
+  }
+
+  .pagination-button,
+  .page-number {
+    min-width: 32px;
+    min-height: 36px;
+    border: 0;
+    font-size: .95rem;
+    background-color: var(--color-surface);
+    color: var(--color-text);
+  }
+
+  .pagination-button {
+    padding: 0 .4rem;
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  }
+
+  .page-number.active {
+    border-color: var(--color-text);
+    background-color: var(--color-brand-soft);
+    color: #14596c;
+  }
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@media (max-width: 576px) {
+  .catalog-page {
+    padding-top: 3rem;
+
+    .catalog-toolbar {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .catalog-pagination {
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .page-numbers {
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+  }
+}
+
+.category-filter {
+  display: flex;
+  align-items: center;
+  gap: clamp(1rem, 2vw, 1.5rem);
+  color: var(--color-muted);
+  font-size: 0.95rem;
+  line-height: 1.4;
+
+  select {
+    min-height: 48px;
+    width: 17rem;
+    max-width: 100%;
+    padding: 0.7rem 2.75rem 0.7rem 1.15rem;
+    align-items: center;
+    background-position: right 1rem center;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-surface);
+    color: var(--color-text);
+  }
+
+  @supports (appearance: base-select) {
+    select option {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      min-height: 2.85rem;
+      padding: 0.65rem 1rem;
+    }
+
+    select option + option { margin-top: 0.2rem; }
+  }
+}
+
+.active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 0 1.5rem;
+  font-size: 0.875rem;
+
+  p {
+    margin: 0;
+    color: var(--color-muted);
+  }
+  button {
+    padding: 0.35rem 0.8rem;
+    border: 1px solid var(--color-border);
+    background: var(--color-brand-pale);
+    color: var(--color-brand-dark);
+  }
+}
+
+@media (max-width: 576px) {
+  .category-filter select {
+    flex: 1;
+    min-width: 0;
+    max-width: none;
+  }
+}

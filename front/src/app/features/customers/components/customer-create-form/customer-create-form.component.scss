@@ -1,0 +1,119 @@
+:host {
+  display: block;
+  color: #0f172a;
+}
+.customer-create {
+  padding: 1.5rem;
+}
+header {
+  margin-bottom: 2rem;
+}
+h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.875rem;
+  font-weight: 750;
+}
+header p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+.customer-card {
+  padding: 2rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 5%);
+}
+h2 {
+  margin: 0 0 1.25rem;
+  font-size: 1.125rem;
+  font-weight: 750;
+}
+.customer-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+.customer-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+label {
+  font-size: 0.875rem;
+  font-weight: 650;
+  color: #334155;
+}
+input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.75rem;
+  background: #fff;
+  color: #0f172a;
+}
+input:focus {
+  border-color: #008eb5;
+  box-shadow: 0 0 0 3px rgb(0 170 214 / 15%);
+}
+input[aria-invalid='true'] {
+  border-color: #b42318;
+}
+.form-error {
+  color: #b42318;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+.customer-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #f1f5f9;
+}
+button {
+  min-height: 44px;
+  border: 0;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.button-primary {
+  background: #09090b;
+  color: #fff;
+}
+.button-secondary {
+  background: #f1f5f9;
+  color: #475569;
+}
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+button:focus-visible {
+  outline: 2px solid #008eb5;
+  outline-offset: 3px;
+}
+@media (max-width: 639px) {
+  .customer-create {
+    padding: 1rem 0.5rem;
+  }
+  .customer-card {
+    padding: 1.25rem;
+  }
+  .customer-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .customer-actions {
+    flex-wrap: wrap;
+  }
+  button {
+    flex: 1;
+  }
+}

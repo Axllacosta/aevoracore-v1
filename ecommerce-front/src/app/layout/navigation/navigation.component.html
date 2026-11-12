@@ -1,0 +1,43 @@
+<nav class="main-navigation" aria-label="Navegación por categorías">
+  <div class="container">
+    <ul class="navigation-list">
+      <li>
+        <a
+          routerLink="/"
+          routerLinkActive="active"
+          ariaCurrentWhenActive="page"
+          [routerLinkActiveOptions]="{ exact: true }"
+          >Inicio</a
+        >
+      </li>
+      <li>
+        <a
+          routerLink="/productos"
+          [class.active]="allProductsActive()"
+          [attr.aria-current]="allProductsActive() ? 'page' : null"
+          >Todos los productos</a
+        >
+      </li>
+      @for (category of catalog.categories(); track category.id_categoria) {
+        <li>
+          <a
+            routerLink="/productos"
+            [queryParams]="{ category_id: category.id_categoria }"
+            routerLinkActive="active"
+            ariaCurrentWhenActive="page"
+            >{{ category.nombre }}</a
+          >
+        </li>
+      }
+      @if (catalog.loading()) {
+        <li class="navigation-status" role="status">Cargando categorías…</li>
+      } @else if (catalog.error()) {
+        <li>
+          <button type="button" class="category-retry" (click)="catalog.load()">
+            Reintentar categorías
+          </button>
+        </li>
+      }
+    </ul>
+  </div>
+</nav>

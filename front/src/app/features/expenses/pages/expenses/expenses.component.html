@@ -1,0 +1,270 @@
+<div class="page-header">
+  <div>
+    <h1>Compras y gastos</h1>
+    <p class="subtitle">Consulta y administra las compras y gastos de la empresa.</p>
+  </div>
+</div>
+<p-toolbar>
+  <ng-template #start>
+    <div class="actions">
+      <label for="expense-month">Mes del listado</label>
+      <p-datepicker
+        inputId="expense-month"
+        view="month"
+        dateFormat="yy-mm"
+        dataType="string"
+        [minDate]="minMonth"
+        [maxDate]="maxMonth"
+        [showIcon]="true"
+        iconDisplay="input"
+        [readonlyInput]="true"
+        appendTo="body"
+        [ngModel]="facade.month()"
+        (ngModelChange)="changeMonth($event)"
+      />
+    </div>
+  </ng-template>
+  <ng-template #end>
+    <div class="actions">
+      <p-button
+        icon="pi pi-refresh"
+        ariaLabel="Actualizar listado"
+        [text]="true"
+        [loading]="facade.list.loading()"
+        (onClick)="facade.load()"
+      />
+      @if (user()?.rol === 'ADMIN') {
+        <p-button
+          label="Nueva categoría"
+          icon="pi pi-tags"
+          [outlined]="true"
+          [disabled]="facade.operation.saving()"
+          (onClick)="categoryEditor.set(true); facade.operation.error.set('')"
+        />
+        <p-button
+          label="Registrar gasto"
+          icon="pi pi-plus"
+          [disabled]="facade.operation.saving()"
+          (onClick)="startExpense()"
+        />
+      }
+    </div>
+  </ng-template>
+</p-toolbar>
+@if (facade.operation.error() && !editor() && !categoryEditor()) {
+  <p-message severity="error">{{ facade.operation.error() }}</p-message>
+}
+<div class="row g-4 mt-1">
+  <section class="col-12">
+    <div class="panel">
+      <h2>Registro del mes</h2>
+      @if (facade.list.error()) {
+        <p-message severity="error">{{ facade.list.error() }}</p-message>
+      }
+      <p-table
+        [value]="facade.list.items()"
+        [loading]="facade.list.loading()"
+        [scrollable]="true"
+        [tableStyle]="{ 'min-width': '750px' }"
+        stripedRows
+      >
+        <ng-template #header
+          ><tr>
+            <th>Fecha</th>
+            <th>Categoría</th>
+            <th>Descripción</th>
+            <th>Importe</th>
+            <th>Estado</th>
+            <th class="catalog-actions-column">Acciones</th>
+          </tr></ng-template
+        >
+        <ng-template #body let-row
+          ><tr>
+            <td>{{ row.fecha | date: 'dd/MM/yyyy' }}</td>
+            <td>{{ row.categoria.nombre }}</td>
+            <td>{{ row.descripcion || '—' }}</td>
+            <td>{{ row.importe | currency: 'PEN' : 'S/ ' }}</td>
+            <td>
+              <p-tag
+                [value]="row.activo ? 'Vigente' : 'Anulado'"
+                [severity]="row.activo ? 'success' : 'secondary'"
+              />
+            </td>
+            <td class="catalog-actions-column">
+              @if (row.activo && user()?.rol === 'ADMIN') {
+                <div class="actions catalog-row-actions">
+                  <p-button
+                    icon="pi pi-pencil"
+                    ariaLabel="Editar gasto"
+                    [text]="true"
+                    [disabled]="facade.operation.saving()"
+                    (onClick)="startExpense(row)"
+                  />
+                  <p-button
+                    icon="pi pi-ban"
+                    ariaLabel="Anular gasto"
+                    severity="danger"
+                    [text]="true"
+                    [disabled]="facade.operation.saving()"
+                    (onClick)="cancel(row)"
+                  />
+                </div>
+              }
+            </td></tr
+        ></ng-template>
+        <ng-template #emptymessage
+          ><tr>
+            <td colspan="6" class="empty">No hay compras o gastos registrados en este mes.</td>
+          </tr></ng-template
+        >
+      </p-table>
+      <p-paginator
+        [first]="(facade.list.page() - 1) * 20"
+        [rows]="20"
+        [totalRecords]="facade.list.total()"
+        (onPageChange)="paginate($event)"
+      />
+    </div>
+  </section>
+</div>
+<p-dialog
+  [header]="facade.editing() === null ? 'Registrar gasto' : 'Editar gasto'"
+  [visible]="editor()"
+  (visibleChange)="editor.set($event)"
+  [modal]="true"
+  [closable]="!facade.operation.saving()"
+  [closeOnEscape]="!facade.operation.saving()"
+  [style]="{ width: '560px', maxWidth: '95vw' }"
+  [draggable]="false"
+  [resizable]="false"
+  [contentStyle]="{ paddingBottom: '0' }"
+>
+  <div class="catalog-editor">
+    <section class="editor-card catalog-detail-card">
+      <form [formGroup]="facade.form" (ngSubmit)="save()">
+        @if (facade.operation.error()) {
+          <p-message severity="error">{{ facade.operation.error() }}</p-message>
+        }
+        @if (facade.categoryError()) {
+          <p-message severity="error"
+            >{{ facade.categoryError() }}
+            <p-button label="Reintentar" [text]="true" (onClick)="facade.loadCategories()"
+          /></p-message>
+        }
+        <div class="field">
+          <label for="expense-date">Fecha del gasto *</label
+          ><p-datepicker
+            inputId="expense-date"
+            formControlName="fecha"
+            dateFormat="yy-mm-dd"
+            dataType="string"
+            [showIcon]="true"
+            iconDisplay="input"
+            [readonlyInput]="true"
+            appendTo="body"
+          />
+        </div>
+        <div class="field">
+          <label for="expense-category">Categoría *</label
+          ><p-select
+            inputId="expense-category"
+            formControlName="id_categoria_gasto"
+            [options]="facade.categories()"
+            optionLabel="nombre"
+            optionValue="id_categoria_gasto"
+            [filter]="true"
+            placeholder="Selecciona una categoría"
+            appendTo="body"
+          />
+        </div>
+        <div class="field">
+          <label for="expense-amount">Importe (S/) *</label
+          ><p-inputnumber
+            inputId="expense-amount"
+            formControlName="importe"
+            [min]="0.01"
+            [max]="9999999999.99"
+            [maxFractionDigits]="2"
+            [minFractionDigits]="2"
+          />
+        </div>
+        <div class="field">
+          <label for="expense-description"
+            >Descripción {{ facade.requiresDescription() ? '*' : '(opcional)' }}</label
+          ><textarea
+            pTextarea
+            id="expense-description"
+            formControlName="descripcion"
+            rows="3"
+            maxlength="1000"
+          ></textarea>
+          @if (facade.requiresDescription()) {
+            <small class="muted">Describe el gasto cuando selecciones Otros.</small>
+          }
+        </div>
+        <div class="actions justify-content-end">
+          <p-button
+            label="Volver"
+            [disabled]="facade.operation.saving()"
+            (onClick)="editor.set(false)"
+            severity="secondary"
+            [outlined]="true"
+          /><p-button
+            type="submit"
+            label="Guardar gasto"
+            [loading]="facade.operation.saving()"
+            [disabled]="facade.operation.saving()"
+          />
+        </div>
+      </form>
+    </section>
+  </div>
+</p-dialog>
+<p-dialog
+  header="Nueva categoría de gasto"
+  [visible]="categoryEditor()"
+  (visibleChange)="categoryEditor.set($event)"
+  [modal]="true"
+  [closable]="!facade.operation.saving()"
+  [closeOnEscape]="!facade.operation.saving()"
+  [style]="{ width: '440px', maxWidth: '95vw' }"
+  [draggable]="false"
+  [resizable]="false"
+  [contentStyle]="{ paddingBottom: '0' }"
+>
+  <div class="catalog-editor">
+    <section class="editor-card catalog-detail-card">
+      @if (facade.operation.error()) {
+        <p-message severity="error">{{ facade.operation.error() }}</p-message>
+      }
+      <form (ngSubmit)="saveCategory()">
+        <div class="field">
+          <label for="category-name">Nombre *</label
+          ><input
+            pInputText
+            id="category-name"
+            name="categoryName"
+            maxlength="100"
+            required
+            [ngModel]="categoryName()"
+            (ngModelChange)="categoryName.set($event)"
+          />
+        </div>
+        <div class="actions justify-content-end">
+          <p-button
+            label="Volver"
+            [disabled]="facade.operation.saving()"
+            (onClick)="categoryEditor.set(false)"
+            severity="secondary"
+            [outlined]="true"
+          /><p-button
+            type="submit"
+            label="Crear categoría"
+            [loading]="facade.operation.saving()"
+            [disabled]="facade.operation.saving()"
+          />
+        </div>
+      </form>
+    </section>
+  </div>
+</p-dialog>

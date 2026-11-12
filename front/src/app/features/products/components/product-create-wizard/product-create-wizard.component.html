@@ -1,0 +1,228 @@
+<div class="product-wizard">
+  <header class="wizard-header">
+    <h1>Crear producto</h1>
+    <p>Registra un producto y carga sus imágenes paso a paso.</p>
+  </header>
+
+  <nav class="wizard-progress" aria-label="Pasos para crear un producto">
+    <div class="progress-info" aria-live="polite">
+      <strong>{{ completed() ? 'Completado' : 'Paso ' + (step() + 1) + ' de 5' }}</strong>
+      <span>{{ completed() ? 'Producto creado' : steps[step()].title }}</span>
+    </div>
+    <div
+      class="progress-track"
+      role="progressbar"
+      aria-label="Progreso de creación"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      [attr.aria-valuenow]="completed() ? 100 : step() * 25"
+    >
+      <div class="progress-fill" [style.width.%]="completed() ? 100 : step() * 25"></div>
+    </div>
+    <ol class="progress-points">
+      @for (item of steps; track $index; let index = $index) {
+        <li>
+          <button
+            type="button"
+            class="point"
+            [class.active]="!completed() && step() === index"
+            [class.done]="completed() || step() > index"
+            [disabled]="facade.saving() || completed() || !!savedProduct()"
+            [attr.aria-label]="'Paso ' + (index + 1) + ': ' + item.title"
+            [attr.aria-current]="!completed() && step() === index ? 'step' : null"
+            (click)="goToStep(index)"
+          >
+            {{ index + 1 }}
+          </button>
+        </li>
+      }
+    </ol>
+  </nav>
+
+  <div class="wizard-card">
+    @if (completed()) {
+      <section class="success-state" role="status">
+        <span class="success-icon" aria-hidden="true">✓</span>
+        <h2 #stepHeading tabindex="-1">¡Producto creado!</h2>
+        <p>
+          {{ savedProduct()?.nombre }} se registró correctamente{{
+            images().length ? ' con sus imágenes' : ''
+          }}.
+        </p>
+        <div class="wizard-actions">
+          <button type="button" class="button-secondary" (click)="close()()">
+            Volver al catálogo
+          </button>
+          <button type="button" class="button-primary" (click)="restart()">
+            Crear otro producto
+          </button>
+        </div>
+      </section>
+    } @else {
+      <form [formGroup]="form()" (ngSubmit)="submit()">
+        <h2 #stepHeading tabindex="-1">{{ steps[step()].title }}</h2>
+        @if (error()) {
+          <p class="wizard-error" role="alert">{{ error() }}</p>
+        }
+        @if (step() === 0 && facade.categoryError()) {
+          <p class="wizard-error" role="alert">{{ facade.categoryError() }}</p>
+          <button type="button" class="button-secondary" (click)="facade.loadCategories()">
+            Reintentar categorías
+          </button>
+        }
+        @if (step() < 4) {
+          <div class="wizard-fields" [class.three-columns]="step() === 1 || step() === 2">
+            @for (field of activeFields(); track field.key) {
+              <div
+                class="wizard-field"
+                [class.full-width]="field.key === 'id_categoria' || field.type === 'textarea'"
+              >
+                <label [for]="'create-' + field.key"
+                  >{{ field.label }}{{ field.required ? ' *' : '' }}</label
+                >
+                @switch (field.type) {
+                  @case ('select') {
+                    <p-select
+                      [inputId]="'create-' + field.key"
+                      [formControlName]="field.key"
+                      [options]="field.options?.() ?? []"
+                      optionDisabled="disabled"
+                      optionLabel="label"
+                      optionValue="value"
+                      [placeholder]="
+                        field.key === 'controlar_stock'
+                          ? 'Habilitado: exige stock disponible'
+                          : 'Selecciona una categoría'
+                      "
+                      [filter]="true"
+                      appendTo="body"
+                    />
+                  }
+                  @case ('textarea') {
+                    <textarea
+                      pTextarea
+                      [id]="'create-' + field.key"
+                      [formControlName]="field.key"
+                      rows="3"
+                      placeholder="Describe el producto..."
+                    ></textarea>
+                  }
+                  @case ('number') {
+                    <p-inputnumber
+                      [inputId]="'create-' + field.key"
+                      [formControlName]="field.key"
+                      [min]="field.min ?? 0"
+                      [max]="field.max"
+                      [maxFractionDigits]="2"
+                      [useGrouping]="false"
+                      placeholder="0.00"
+                    />
+                  }
+                  @default {
+                    <input
+                      pInputText
+                      [id]="'create-' + field.key"
+                      [formControlName]="field.key"
+                      [attr.maxlength]="field.max ?? null"
+                      [placeholder]="field.key === 'sku' ? 'Ej. ED-001' : field.label"
+                    />
+                  }
+                }
+                @if (form().controls[field.key].touched && form().controls[field.key].invalid) {
+                  <small class="wizard-error" role="alert"
+                    >{{ field.label }}:
+                    {{
+                      form().controls[field.key].hasError('required')
+                        ? 'este campo es obligatorio.'
+                        : 'revisa el formato o los límites permitidos.'
+                    }}</small
+                  >
+                }
+              </div>
+            }
+          </div>
+          @if (step() === 2) {
+            <p class="help-text">Registra las dimensiones en centímetros.</p>
+          }
+        } @else {
+          <p class="help-text">
+            La primera imagen se marcará como principal. Puedes crear el producto sin imágenes y
+            agregarlas después.
+          </p>
+          <label class="upload-zone" [class.disabled]="facade.saving()">
+            <i class="pi pi-cloud-upload" aria-hidden="true"></i>
+            <strong>Seleccionar imágenes</strong>
+            <span>JPG, PNG o WebP · Hasta 5 MB por imagen</span>
+            <input
+              class="upload-input"
+              type="file"
+              aria-label="Seleccionar imágenes del producto"
+              accept="image/jpeg,image/png,image/webp"
+              multiple
+              [disabled]="facade.saving()"
+              (change)="selectImages($event)"
+            />
+          </label>
+          @if (imageError()) {
+            <p class="wizard-error" role="alert">{{ imageError() }}</p>
+          }
+          <div class="image-gallery">
+            @for (image of images(); track image.preview; let index = $index) {
+              <article class="image-preview">
+                <img [src]="image.preview" [alt]="image.file.name" />
+                @if (index === 0) {
+                  <span class="image-badge">Principal</span>
+                }
+                <p>{{ image.file.name }}</p>
+                @if (image.uploaded) {
+                  <small>Guardada</small>
+                } @else {
+                  <button
+                    type="button"
+                    [disabled]="facade.saving()"
+                    [attr.aria-label]="'Quitar ' + image.file.name"
+                    (click)="removeImage(index)"
+                  >
+                    Quitar
+                  </button>
+                }
+              </article>
+            }
+          </div>
+        }
+        <div class="wizard-actions">
+          @if (step() === 0) {
+            <button
+              type="button"
+              class="button-secondary"
+              [disabled]="facade.saving()"
+              (click)="close()()"
+            >
+              Cancelar
+            </button>
+          } @else {
+            <button
+              type="button"
+              class="button-secondary"
+              [disabled]="facade.saving() || !!savedProduct()"
+              (click)="goToStep(step() - 1)"
+            >
+              Atrás
+            </button>
+          }
+          <button type="submit" class="button-primary" [disabled]="facade.saving()">
+            {{
+              facade.saving()
+                ? 'Guardando…'
+                : step() === 4
+                  ? savedProduct()
+                    ? 'Reintentar imágenes'
+                    : 'Crear producto'
+                  : 'Siguiente'
+            }}
+          </button>
+        </div>
+      </form>
+    }
+  </div>
+</div>

@@ -1,0 +1,175 @@
+<div class="page-header">
+  <div>
+    <h1>Dashboard</h1>
+    <p class="subtitle">Ventas, gastos y evolución de tu negocio.</p>
+  </div>
+</div>
+<p-toolbar>
+  <ng-template #start>
+    <div class="actions">
+      @if (facade.data(); as data) {
+        <span class="period-label"
+          >{{ monthLabel(data.anio, data.mes) }} <span class="muted">· En curso</span></span
+        >
+      }
+    </div>
+  </ng-template>
+  <ng-template #end>
+    <p-button
+      ariaLabel="Actualizar dashboard"
+      icon="pi pi-refresh"
+      [text]="true"
+      [loading]="facade.loading()"
+      (onClick)="facade.load()"
+    />
+  </ng-template>
+</p-toolbar>
+@if (facade.error()) {
+  <p-message severity="error"
+    >{{ facade.error() }} <p-button label="Reintentar" [text]="true" (onClick)="facade.load()"
+  /></p-message>
+}
+@if (facade.loading()) {
+  <div class="panel empty" role="status">
+    <i class="pi pi-spin pi-spinner" aria-hidden="true"></i> Cargando dashboard…
+  </div>
+}
+@if (facade.data(); as data) {
+  <section aria-label="Indicadores del mes actual" class="kpi-grid">
+    <article class="panel kpi">
+      <div class="kpi-label"><span>Ventas totales</span><i class="pi pi-receipt"></i></div>
+      <strong>{{ data.kpis.ventas_totales | number }}</strong
+      ><small>Ventas confirmadas del mes</small>
+    </article>
+    <article class="panel kpi">
+      <div class="kpi-label"><span>Productos vendidos</span><i class="pi pi-box"></i></div>
+      <strong>{{ data.kpis.productos_vendidos | number }}</strong
+      ><small>Unidades de muebles vendidos</small>
+    </article>
+    <article class="panel kpi">
+      <div class="kpi-label"><span>Ingresos</span><i class="pi pi-arrow-down-left"></i></div>
+      <strong>{{ data.kpis.ingresos | currency: 'PEN' : 'S/ ' }}</strong
+      ><small>Importe de ventas del mes</small>
+    </article>
+    <article class="panel kpi">
+      <div class="kpi-label"><span>Egresos</span><i class="pi pi-arrow-up-right"></i></div>
+      <strong>{{ data.kpis.egresos | currency: 'PEN' : 'S/ ' }}</strong
+      ><small>Compras y gastos vigentes</small>
+    </article>
+    <article class="panel kpi balance" [class.negative]="negativeBalance()">
+      <div class="kpi-label"><span>Balance (utilidad)</span><i class="pi pi-wallet"></i></div>
+      <strong>{{ data.kpis.balance | currency: 'PEN' : 'S/ ' }}</strong
+      ><small>Ingresos menos egresos</small>
+    </article>
+  </section>
+  <div class="dashboard-grid">
+    <section class="panel channels-panel" aria-labelledby="channels-heading">
+      <h2 id="channels-heading">Ingresos por canal</h2>
+      <p class="section-period">{{ monthLabel(data.anio, data.mes) }}</p>
+      @if (hasRevenue()) {
+        <div class="donut-container">
+          <app-dashboard-chart
+            [config]="donut()!"
+            label="Distribución de ingresos del mes entre WhatsApp y Presencial. Importes y porcentajes disponibles debajo."
+          />
+          <div class="donut-center" aria-hidden="true">
+            <small>Total del mes</small
+            ><strong>{{ data.kpis.ingresos | currency: 'PEN' : 'S/ ' }}</strong>
+          </div>
+        </div>
+      } @else {
+        <div class="empty donut-empty">
+          <i class="pi pi-chart-pie"></i>
+          <p>Aún no hay ingresos por ventas en este mes.</p>
+        </div>
+      }
+      <ul class="channel-legend">
+        @for (channel of data.canales; track channel.canal_venta) {
+          <li>
+            <span class="channel-name"
+              ><span
+                class="channel-dot"
+                [style.background]="channelColor(channel.canal_venta)"
+              ></span
+              >{{ channelLabel(channel.canal_venta) }}</span
+            ><strong>{{ channel.importe | currency: 'PEN' : 'S/ ' }}</strong
+            ><span class="channel-percent">{{ channel.porcentaje | number: '1.0-2' }}%</span>
+          </li>
+        }
+      </ul>
+    </section>
+    <section class="panel products-panel" aria-labelledby="products-heading">
+      <h2 id="products-heading">Productos más vendidos</h2>
+      <p class="section-period">
+        Últimos 3 meses · {{ data.ranking_desde | date: 'dd/MM/yyyy' }} –
+        {{ data.ranking_hasta | date: 'dd/MM/yyyy' }} · Mes actual incluido
+      </p>
+      <p-table [value]="data.productos_mas_vendidos" [scrollable]="true">
+        <ng-template #header
+          ><tr>
+            <th>#</th>
+            <th>Producto</th>
+            <th class="numeric">Unidades</th>
+            <th class="numeric">Ingresos</th>
+          </tr></ng-template
+        >
+        <ng-template #body let-product let-index="rowIndex"
+          ><tr>
+            <td class="muted">{{ index + 1 }}</td>
+            <td>
+              <strong>{{ product.nombre }}</strong
+              ><br /><small class="muted">{{ product.sku }}</small>
+            </td>
+            <td class="numeric">
+              <strong>{{ product.unidades_vendidas | number }}</strong>
+            </td>
+            <td class="numeric">{{ product.importe | currency: 'PEN' : 'S/ ' }}</td>
+          </tr></ng-template
+        >
+        <ng-template #emptymessage
+          ><tr>
+            <td colspan="4" class="empty">No hay productos vendidos en este período.</td>
+          </tr></ng-template
+        >
+      </p-table>
+      <small class="ranking-note muted">Los 10 productos con más unidades vendidas.</small>
+    </section>
+  </div>
+  <section class="panel trend-panel" aria-labelledby="trend-heading">
+    <div class="page-header">
+      <div>
+        <h2 id="trend-heading">Balance mensual</h2>
+        <p class="section-period">Últimos 6 meses · Mes actual en curso</p>
+      </div>
+      <span class="balance-formula">Ingresos − egresos</span>
+    </div>
+    <div class="line-container">
+      <app-dashboard-chart
+        [config]="trend()!"
+        label="Balance mensual de los últimos seis meses, incluido el mes actual. Valores disponibles en la tabla siguiente."
+      />
+    </div>
+    <details class="trend-details">
+      <summary>Ver importes por mes</summary>
+      <p-table [value]="data.balance_mensual" [scrollable]="true"
+        ><ng-template #header
+          ><tr>
+            <th>Mes</th>
+            <th>Ingresos</th>
+            <th>Egresos</th>
+            <th>Balance</th>
+          </tr></ng-template
+        ><ng-template #body let-month
+          ><tr>
+            <td>{{ monthLabel(month.anio, month.mes) }}</td>
+            <td>{{ month.ingresos | currency: 'PEN' : 'S/ ' }}</td>
+            <td>{{ month.egresos | currency: 'PEN' : 'S/ ' }}</td>
+            <td>
+              <strong>{{ month.balance | currency: 'PEN' : 'S/ ' }}</strong>
+            </td>
+          </tr></ng-template
+        ></p-table
+      >
+    </details>
+  </section>
+}

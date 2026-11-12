@@ -1,0 +1,37 @@
+<div class="product-gallery">
+  <div class="gallery-layout" [class.with-thumbnails]="sortedImages().length > 1">
+    <!-- Miniaturas -->
+    @if (sortedImages().length > 1) {
+      <div class="image-thumbnails">
+        @for (image of sortedImages(); track image.id_imagen) {
+          <button
+            type="button"
+            class="thumbnail"
+            [class.active]="selectedImage() === image.url_imagen"
+            [attr.aria-label]="'Ver imagen ' + image.orden"
+            [attr.aria-pressed]="selectedImage() === image.url_imagen"
+            (click)="selectedImage.set(image.url_imagen)"
+          >
+            <img
+              [src]="image.url_miniatura || image.url_imagen"
+              [alt]="name() + ' - imagen ' + image.orden"
+              loading="lazy"
+              decoding="async"
+            />
+          </button>
+        }
+      </div>
+    }
+
+    <!-- Imagen principal -->
+    <div class="main-image">
+      <app-product-image
+        [images]="sortedImages()"
+        [alt]="name()"
+        [selectedUrl]="selectedImage()"
+        fit="contain"
+        [priority]="true"
+      />
+    </div>
+  </div>
+</div>

@@ -1,0 +1,8 @@
+<app-hero-banner />
+
+<app-product-section
+  [products]="ecommerce.products()"
+  [loading]="ecommerce.isCatalogLoading()"
+  [error]="ecommerce.catalogError()"
+  (retry)="loadProducts()"
+/>

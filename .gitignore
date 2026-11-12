@@ -1,0 +1,40 @@
+# Dependencies and virtual environments
+node_modules/
+.venv/
+venv/
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Generated files and local data
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.angular/
+dist/
+out-tsc/
+coverage/
+tmp/
+.tmp-tests/
+*.log
+*.tsbuildinfo
+*.sqlite
+*.sqlite3
+*.db
+
+# Editors and OS
+.idea/
+.DS_Store
+Thumbs.db
+
+# Nested repository metadata stays local
+.git/

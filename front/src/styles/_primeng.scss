@@ -1,0 +1,162 @@
+@use '../app/shared/catalog/catalog-page';
+
+:root {
+  --app-ink: #0f172a;
+  --app-muted: #64748b;
+  --app-border: #e2e8f0;
+  --app-card-radius: 1rem;
+}
+
+.p-button :is(.pi, .p-icon),
+button > .pi {
+  font-size: 18px;
+}
+.p-button .p-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.p-dialog {
+  border: 0;
+  resize: none;
+}
+.p-dialog-title {
+  margin: 0.5rem 0 0.5rem 1.5rem;
+  color: var(--app-ink);
+  font-size: 1.875rem;
+  font-weight: 750;
+}
+.p-dialog .p-resizable-handle {
+  display: none;
+  pointer-events: none;
+}
+.p-dialog-content > .catalog-editor {
+  padding-top: 0.5rem;
+}
+.editor-card > form > .actions:last-child,
+.editor-card > .actions:last-child {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #f1f5f9;
+}
+.editor-card .catalog-detail-heading h2 {
+  margin: 0;
+}
+.editor-card :is(input.p-inputtext, textarea.p-textarea) {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+}
+.field .p-datepicker {
+  width: 100%;
+}
+.editor-card .detail-grid dd {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--app-border);
+  border-radius: 0.75rem;
+}
+.panel {
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-card-radius);
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 5%);
+}
+.p-datatable-thead > tr > th {
+  white-space: nowrap;
+}
+.p-toolbar {
+  gap: 1rem;
+}
+.p-toolbar :is(.p-toolbar-start, .p-toolbar-end) {
+  gap: 0.5rem;
+}
+.p-confirmdialog {
+  max-width: calc(100vw - 2rem);
+
+  .p-dialog-header {
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem 1.5rem 0.75rem;
+  }
+
+  .p-dialog-title {
+    margin: 0;
+    font-size: 1.5rem;
+    line-height: 1.3;
+  }
+
+  .p-dialog-content {
+    padding: 0 1.5rem 1.25rem;
+  }
+
+  .p-dialog-footer {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding: 0 1.5rem 1.5rem;
+  }
+}
+.deactivation-confirm .p-dialog-header {
+  padding: 1.5rem 1.5rem 0.75rem;
+}
+.deactivation-confirm .p-dialog-title {
+  margin: 0;
+}
+.deactivation-confirm .p-dialog-content {
+  padding: 0 1.5rem 1.5rem;
+}
+.deactivation-confirm .p-confirmdialog-message {
+  line-height: 1.6;
+}
+.deactivation-confirm .p-dialog-footer {
+  padding: 0 1.5rem 1.5rem;
+  gap: 0.75rem;
+}
+.sale-cancel-confirm .p-dialog-header {
+  padding: 1.5rem 1.5rem 0.75rem;
+  gap: 1rem;
+}
+.sale-cancel-confirm .p-dialog-title {
+  margin: 0;
+  font-size: 1.5rem;
+  line-height: 1.3;
+}
+.sale-cancel-confirm .p-dialog-content {
+  padding: 0 1.5rem 1.5rem;
+  max-height: 50vh;
+}
+.sale-cancel-confirm .p-confirmdialog-message {
+  min-width: 0;
+  color: #475569;
+  font-size: 0.875rem;
+  line-height: 1.65;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.sale-cancel-confirm .p-dialog-footer {
+  padding: 0 1.5rem 1.5rem;
+  gap: 0.75rem;
+}
+.sale-cancel-confirm .p-dialog-footer .p-button {
+  min-width: 120px;
+  min-height: 44px;
+}
+@media (max-width: 480px) {
+  .sale-cancel-confirm .p-dialog-footer .p-button {
+    flex: 1;
+    min-width: 0;
+  }
+}
+@media (max-width: 700px) {
+  .p-dialog-title {
+    margin-inline-start: 0;
+    font-size: 1.5rem;
+  }
+  .p-toolbar .p-toolbar-start {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+  .p-toolbar .p-toolbar-end {
+    margin-inline-start: auto;
+  }
+}

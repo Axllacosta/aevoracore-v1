@@ -1,0 +1,123 @@
+<p-dialog
+  header="Imágenes del producto"
+  [visible]="!!facade.imageProduct()"
+  (visibleChange)="facade.imageProduct.set(null)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [closable]="!facade.imageBusy()"
+  [closeOnEscape]="!facade.imageBusy()"
+  [style]="{ width: '1040px', maxWidth: '96vw' }"
+  [contentStyle]="{ paddingBottom: '0' }"
+>
+  <ng-template #header>
+    <h1 class="catalog-dialog-title">Imágenes del producto</h1>
+  </ng-template>
+  @if (facade.imageProduct(); as product) {
+    <div class="catalog-editor">
+      <header class="editor-header">
+        <p>Consulta las imágenes del producto y elige cuál se mostrará como principal.</p>
+      </header>
+      <section class="editor-card catalog-detail-card" [attr.aria-busy]="facade.imageBusy()">
+        <header class="catalog-detail-heading">
+          <h2>{{ product.nombre }}</h2>
+          <p-tag [value]="facade.images().length + ' imágenes'" severity="secondary" />
+        </header>
+        @if (facade.imageError()) {
+          <p-message severity="error">{{ facade.imageError() }}</p-message>
+        }
+        <div class="image-upload-bar">
+          <div>
+            <strong>Galería del producto</strong>
+            <p class="image-help">
+              JPG, PNG o WebP. Selecciona una o varias imágenes para agregarlas.
+            </p>
+          </div>
+          @if (canManage()) {
+            <p-fileupload
+              class="catalog-create-button"
+              mode="basic"
+              name="images"
+              accept="image/jpeg,image/png,image/webp"
+              [multiple]="true"
+              [customUpload]="true"
+              [auto]="true"
+              chooseLabel="Agregar imágenes"
+              [disabled]="facade.imageBusy()"
+              (uploadHandler)="upload($event)"
+            >
+              <ng-template #chooseicon>
+                <i class="pi pi-plus catalog-icon" aria-hidden="true"></i>
+              </ng-template>
+            </p-fileupload>
+          }
+        </div>
+        @if (facade.imageBusy()) {
+          <p-message severity="info">Procesando imágenes…</p-message>
+        }
+        <div class="product-image-grid">
+          @for (image of facade.images(); track image.id_imagen) {
+            <article class="product-image-card">
+              <div class="product-image-preview">
+                <img [src]="image.url_imagen" [alt]="image.nombre_archivo" />
+                @if (image.es_principal) {
+                  <p-tag class="principal-tag" value="Principal" severity="contrast" />
+                }
+              </div>
+              <div class="product-image-info">
+                <p class="product-image-name" [title]="image.nombre_archivo">
+                  {{ image.nombre_archivo }}
+                </p>
+                @if (canManage()) {
+                  <div class="product-image-actions">
+                    @if (!image.es_principal) {
+                      <p-button
+                        label="Usar como principal"
+                        severity="secondary"
+                        [outlined]="true"
+                        [disabled]="facade.imageBusy()"
+                        (onClick)="facade.imageAction(image)"
+                      />
+                    } @else {
+                      <span class="image-help">Imagen principal</span>
+                    }
+                    <p-button
+                      severity="secondary"
+                      [text]="true"
+                      [ariaLabel]="'Eliminar imagen ' + image.nombre_archivo"
+                      [disabled]="facade.imageBusy()"
+                      (onClick)="removeImage(image)"
+                    >
+                      <ng-template #icon>
+                        <i class="pi pi-trash catalog-icon" aria-hidden="true"></i>
+                      </ng-template>
+                    </p-button>
+                  </div>
+                }
+              </div>
+            </article>
+          }
+        </div>
+        @if (!facade.images().length && !facade.imageBusy() && !facade.imageError()) {
+          <div class="image-empty">
+            <i class="pi pi-images" aria-hidden="true"></i>
+            <strong>Este producto todavía no tiene imágenes.</strong>
+            @if (canManage()) {
+              <span>Agrega imágenes para completar su galería.</span>
+            }
+          </div>
+        }
+        <footer class="editor-actions image-footer">
+          <button
+            type="button"
+            class="button-secondary"
+            [disabled]="facade.imageBusy()"
+            (click)="facade.imageProduct.set(null)"
+          >
+            Cerrar
+          </button>
+        </footer>
+      </section>
+    </div>
+  }
+</p-dialog>

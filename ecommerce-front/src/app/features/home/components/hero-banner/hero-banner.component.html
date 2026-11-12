@@ -1,0 +1,35 @@
+<section class="home-hero" aria-label="Galería de imágenes destacadas">
+  <div class="hero-slide" aria-live="polite">
+    @if (!failedSlides().has(activeSlide())) {
+      <img
+        class="hero-slide-image"
+        [src]="slides[activeSlide()].src"
+        [alt]="slides[activeSlide()].alt"
+        fetchpriority="high"
+        loading="eager"
+        decoding="async"
+        (error)="onImageError()"
+      />
+    } @else {
+      <div class="hero-slide-placeholder" aria-hidden="true"></div>
+    }
+  </div>
+
+  @if (slides.length - failedSlides().size > 1) {
+    <div class="hero-carousel-controls" role="group" aria-label="Controles del carrusel">
+      <div class="hero-carousel-dots" aria-label="Seleccionar imagen">
+        @for (image of slides; track image.src; let index = $index) {
+          @if (!failedSlides().has(index)) {
+            <button
+              type="button"
+              [class.active]="activeSlide() === index"
+              [attr.aria-label]="'Mostrar imagen ' + (index + 1)"
+              [attr.aria-current]="activeSlide() === index ? 'true' : null"
+              (click)="selectSlide(index)"
+            ></button>
+          }
+        }
+      </div>
+    </div>
+  }
+</section>

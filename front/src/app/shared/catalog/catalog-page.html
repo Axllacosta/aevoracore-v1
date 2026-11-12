@@ -1,0 +1,401 @@
+<div class="page-header">
+  <div>
+    <h1>{{ title }}</h1>
+    <p class="subtitle">{{ description }}</p>
+  </div>
+</div>
+@if (lookupError()) {
+  <p-message severity="error"
+    >{{ lookupError() }} <p-button label="Reintentar" [text]="true" (onClick)="retryLookup()"
+  /></p-message>
+}
+<p-toolbar
+  ><ng-template #start
+    ><div class="actions">
+      <input
+        pInputText
+        aria-label="Buscar registros"
+        placeholder="Buscar por nombre o código"
+        [ngModel]="search()"
+        (ngModelChange)="search.set($event)"
+        (keydown.enter)="filter()"
+      /><p-select
+        ariaLabel="Estado"
+        [options]="statuses"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="active()"
+        (ngModelChange)="active.set($event); filter()"
+      />
+      @if (categoryOptions().length) {
+        <p-select
+          ariaLabel="Filtrar categoría"
+          placeholder="Todas las categorías"
+          [showClear]="true"
+          [options]="categoryOptions()"
+          optionLabel="label"
+          optionValue="value"
+          [ngModel]="category()"
+          (ngModelChange)="category.set($event); filter()"
+        />
+      }
+      <p-button class="catalog-search-button" label="Buscar" [outlined]="true" (onClick)="filter()"
+        ><ng-template #icon
+          ><i class="pi pi-search catalog-icon" aria-hidden="true"></i></ng-template
+      ></p-button></div
+  ></ng-template>
+  <ng-template #end>
+    <div class="actions">
+      <p-button [text]="true" ariaLabel="Actualizar listado" (onClick)="facade.load()"
+        ><ng-template #icon
+          ><i class="pi pi-refresh catalog-icon" aria-hidden="true"></i></ng-template
+      ></p-button>
+      @if (canManage()) {
+        <p-button class="catalog-create-button" [label]="'Crear ' + singular" (onClick)="create()"
+          ><ng-template #icon
+            ><i class="pi pi-plus catalog-icon" aria-hidden="true"></i></ng-template
+        ></p-button>
+      }
+    </div>
+  </ng-template>
+</p-toolbar>
+@if (facade.error()) {
+  <p-message severity="error">{{ facade.error() }}</p-message>
+}
+@if (facade.operationError() && !dialog()) {
+  <p-message severity="error">{{ facade.operationError() }}</p-message>
+}
+<p-table
+  [value]="facade.items()"
+  [loading]="facade.loading()"
+  [scrollable]="true"
+  [tableStyle]="{ 'min-width': '650px' }"
+  stripedRows
+>
+  <ng-template #header
+    ><tr>
+      @for (col of columns; track col.key) {
+        <th>{{ col.label }}</th>
+      }
+      <th>Estado</th>
+      <th class="catalog-actions-column">Acciones</th>
+    </tr></ng-template
+  >
+  <ng-template #body let-row
+    ><tr>
+      @for (col of columns; track col.key) {
+        <td>
+          @if (col.money) {
+            {{ value(row, col.key) | currency: 'PEN' : 'S/ ' : '1.2-2' }}
+          } @else {
+            {{ value(row, col.key) ?? '—' }}
+          }
+        </td>
+      }
+      <td>
+        <p-tag
+          [value]="row.activo ? 'Activo' : 'Inactivo'"
+          [severity]="row.activo ? 'success' : 'secondary'"
+        />
+      </td>
+      <td class="catalog-actions-column">
+        <div class="actions catalog-row-actions">
+          <p-button [text]="true" ariaLabel="Ver detalle" (onClick)="show(row)"
+            ><ng-template #icon
+              ><i
+                class="pi pi-eye catalog-icon catalog-icon-neutral"
+                aria-hidden="true"
+              ></i></ng-template
+          ></p-button>
+          @for (action of rowActions; track action.label) {
+            <p-button [ariaLabel]="action.label" [text]="true" (onClick)="action.run(row)"
+              ><ng-template #icon
+                ><i [class]="action.icon + ' catalog-icon'" aria-hidden="true"></i></ng-template
+            ></p-button>
+          }
+          @if (canManage()) {
+            <p-button
+              [text]="true"
+              ariaLabel="Editar"
+              [disabled]="facade.saving()"
+              (onClick)="edit(row)"
+              ><ng-template #icon
+                ><i
+                  class="pi pi-pencil catalog-icon catalog-icon-neutral"
+                  aria-hidden="true"
+                ></i></ng-template
+            ></p-button>
+            @if (row.activo) {
+              <p-button
+                severity="danger"
+                [text]="true"
+                ariaLabel="Desactivar"
+                [disabled]="facade.saving()"
+                (onClick)="deactivate(row)"
+                ><ng-template #icon
+                  ><i
+                    class="pi pi-ban catalog-icon catalog-icon-danger"
+                    aria-hidden="true"
+                  ></i></ng-template
+              ></p-button>
+            }
+          }
+        </div>
+      </td></tr
+  ></ng-template>
+  <ng-template #emptymessage
+    ><tr>
+      <td [attr.colspan]="columns.length + 2">
+        <div class="empty">No hay registros para estos filtros.</div>
+      </td>
+    </tr></ng-template
+  ></p-table
+>
+<p-paginator
+  [first]="(facade.page() - 1) * facade.pageSize()"
+  [rows]="facade.pageSize()"
+  [totalRecords]="facade.total()"
+  [rowsPerPageOptions]="[10, 20, 50]"
+  (onPageChange)="paginate($event)"
+/>
+<p-dialog
+  [header]="(editing() ? 'Editar ' : 'Crear ') + singular"
+  [showHeader]="!!editing() || !createView"
+  [contentStyle]="{ paddingBottom: '0' }"
+  [draggable]="false"
+  [resizable]="false"
+  [visible]="dialog()"
+  (visibleChange)="dialog.set($event)"
+  [modal]="true"
+  [style]="{ width: !editing() && createView ? createWidth : editorWidth, maxWidth: '96vw' }"
+  [closable]="!facade.saving()"
+  [closeOnEscape]="!facade.saving()"
+>
+  <ng-template #header>
+    <h1 class="catalog-dialog-title">{{ (editing() ? 'Editar ' : 'Crear ') + singular }}</h1>
+  </ng-template>
+  @if (!editing() && createView) {
+    @if (dialog()) {
+      <ng-container
+        *ngComponentOutlet="
+          createView;
+          inputs: { form: form, fields: fields, buildPayload: createPayload, close: closeCreate }
+        "
+      />
+    }
+  } @else {
+    <div class="catalog-editor">
+      <header class="editor-header">
+        <p>
+          {{
+            editing()
+              ? 'Actualiza la información del registro.'
+              : 'Completa la información del registro.'
+          }}
+        </p>
+      </header>
+      <form
+        class="editor-card"
+        [formGroup]="form"
+        (ngSubmit)="save()"
+        [attr.aria-busy]="facade.saving()"
+      >
+        <h2>Información del {{ singular }}</h2>
+        @if (facade.operationError()) {
+          <p-message severity="error">{{ facade.operationError() }}</p-message>
+        }
+        <ng-template #editorFields let-currentFields>
+          <div class="row">
+            @for (field of currentFields; track field.key) {
+              <div [class]="field.type === 'textarea' ? 'col-12' : 'col-md-6'">
+                <div class="field">
+                  <label [for]="field.key">{{ field.label }}{{ field.required ? ' *' : '' }}</label>
+                  @switch (field.type) {
+                    @case ('textarea') {
+                      <textarea
+                        pTextarea
+                        [id]="field.key"
+                        [formControlName]="field.key"
+                        rows="3"
+                      ></textarea>
+                    }
+                    @case ('number') {
+                      <p-inputnumber
+                        [inputId]="field.key"
+                        [formControlName]="field.key"
+                        [min]="field.min ?? 0"
+                        [maxFractionDigits]="2"
+                        [useGrouping]="false"
+                      />
+                    }
+                    @case ('select') {
+                      <p-select
+                        [inputId]="field.key"
+                        [formControlName]="field.key"
+                        [options]="field.options?.() ?? []"
+                        optionDisabled="disabled"
+                        optionLabel="label"
+                        optionValue="value"
+                        placeholder="Seleccionar"
+                        [filter]="true"
+                        appendTo="body"
+                      />
+                    }
+                    @default {
+                      <input
+                        pInputText
+                        [id]="field.key"
+                        [formControlName]="field.key"
+                        [type]="
+                          field.type === 'email' ? 'email' : field.type === 'tel' ? 'tel' : 'text'
+                        "
+                        [appCustomerInput]="field.input ?? null"
+                        [attr.maxlength]="field.max ?? null"
+                        [attr.inputmode]="field.input === 'digits' ? 'numeric' : null"
+                      />
+                    }
+                  }
+                  @if (form.controls[field.key].touched && form.controls[field.key].invalid) {
+                    <small class="form-error"
+                      >Revisa {{ field.label.toLowerCase() }}:
+                      @if (form.controls[field.key].hasError('required')) {
+                        este campo es obligatorio.
+                      } @else {
+                        el valor no cumple el formato o los límites permitidos.
+                      }
+                    </small>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </ng-template>
+        @if (fieldGroups.length) {
+          <p-tabs class="catalog-tabs" [value]="editTab()" (valueChange)="editTab.set($event)">
+            <p-tablist>
+              @for (group of fieldGroups; track group.id) {
+                <p-tab [value]="group.id">
+                  {{ group.label }}
+                  @if (groupInvalid(group)) {
+                    <span class="tab-error">Revisar</span>
+                  }
+                </p-tab>
+              }
+            </p-tablist>
+            <p-tabpanels>
+              @for (group of fieldGroups; track group.id) {
+                <p-tabpanel [value]="group.id">
+                  <p class="catalog-tab-description">{{ group.description }}</p>
+                  <ng-container
+                    *ngTemplateOutlet="editorFields; context: { $implicit: groupFields(group) }"
+                  />
+                </p-tabpanel>
+              }
+            </p-tabpanels>
+          </p-tabs>
+        } @else {
+          <ng-container *ngTemplateOutlet="editorFields; context: { $implicit: fields }" />
+        }
+        <footer class="editor-actions">
+          <button
+            type="button"
+            class="button-secondary"
+            [disabled]="facade.saving()"
+            (click)="dialog.set(false)"
+          >
+            Cancelar
+          </button>
+          <button type="submit" class="button-primary" [disabled]="facade.saving()">
+            {{
+              facade.saving() ? 'Guardando…' : editing() ? 'Guardar cambios' : 'Crear ' + singular
+            }}
+          </button>
+        </footer>
+      </form>
+    </div>
+  }
+</p-dialog>
+<p-dialog
+  [header]="'Detalle de ' + singular"
+  [visible]="detailOpen()"
+  (visibleChange)="detailOpen.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: editorWidth, maxWidth: '96vw' }"
+  [contentStyle]="{ paddingBottom: '0' }"
+>
+  <ng-template #header>
+    <h1 class="catalog-dialog-title">Detalle de {{ singular }}</h1>
+  </ng-template>
+  @if (detail(); as row) {
+    <div class="catalog-editor catalog-detail">
+      <section class="editor-card catalog-detail-card">
+        <header class="catalog-detail-heading">
+          <h2>{{ detailTitle(row) }}</h2>
+          <p-tag
+            [value]="row.activo ? 'Activo' : 'Inactivo'"
+            [severity]="row.activo ? 'success' : 'secondary'"
+          />
+        </header>
+        <ng-template #detailFields let-currentFields>
+          <dl class="catalog-detail-fields">
+            @for (field of currentFields; track field.key) {
+              @if (field.key !== 'nombre') {
+                <div
+                  class="catalog-detail-field"
+                  [class.catalog-detail-wide]="field.type === 'textarea'"
+                >
+                  <dt>{{ field.label }}</dt>
+                  <dd class="catalog-detail-value">{{ displayValue(row, field) ?? '—' }}</dd>
+                </div>
+              }
+            }
+          </dl>
+        </ng-template>
+        @if (fieldGroups.length) {
+          <p-tabs class="catalog-tabs" [value]="detailTab()" (valueChange)="detailTab.set($event)">
+            <p-tablist>
+              @for (group of fieldGroups; track group.id) {
+                <p-tab [value]="group.id">{{ group.label }}</p-tab>
+              }
+            </p-tablist>
+            <p-tabpanels>
+              @for (group of fieldGroups; track group.id) {
+                <p-tabpanel [value]="group.id">
+                  <p class="catalog-tab-description">{{ group.description }}</p>
+                  <ng-container
+                    *ngTemplateOutlet="detailFields; context: { $implicit: groupFields(group) }"
+                  />
+                </p-tabpanel>
+              }
+            </p-tabpanels>
+          </p-tabs>
+        } @else {
+          <ng-container *ngTemplateOutlet="detailFields; context: { $implicit: fields }" />
+        }
+        <dl class="catalog-detail-dates">
+          <div class="catalog-detail-field">
+            <dt>Creado</dt>
+            <dd class="catalog-detail-value">
+              {{ (value(row, 'created_at') | date: 'dd/MM/yyyy HH:mm') || '—' }}
+            </dd>
+          </div>
+          <div class="catalog-detail-field">
+            <dt>Actualizado</dt>
+            <dd class="catalog-detail-value">
+              {{ (value(row, 'updated_at') | date: 'dd/MM/yyyy HH:mm') || '—' }}
+            </dd>
+          </div>
+        </dl>
+        <footer class="editor-actions">
+          <button type="button" class="button-secondary" (click)="detailOpen.set(false)">
+            Cerrar
+          </button>
+        </footer>
+      </section>
+    </div>
+  }
+</p-dialog>
+
+<ng-container *ngComponentOutlet="extraView" />

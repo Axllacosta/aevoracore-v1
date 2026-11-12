@@ -1,0 +1,21 @@
+<p-dialog
+  header="Crear cliente"
+  [visible]="true"
+  (visibleChange)="!$event && closeDialog()"
+  [showHeader]="false"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [closable]="!facade.saving()"
+  [closeOnEscape]="!facade.saving()"
+  [style]="{ width: '760px', maxWidth: '96vw' }"
+  [contentStyle]="{ paddingBottom: '0' }"
+>
+  <app-customer-create-form
+    [form]="form"
+    [fields]="fields"
+    [buildPayload]="buildPayload"
+    [close]="closeDialog"
+    (created)="created.emit($event)"
+  />
+</p-dialog>

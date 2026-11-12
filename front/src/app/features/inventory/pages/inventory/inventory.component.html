@@ -1,0 +1,185 @@
+<div class="page-header">
+  <div>
+    <h1>Inventario</h1>
+    <p class="subtitle">Existencias y movimientos de tu almacén.</p>
+  </div>
+</div>
+<p-toolbar
+  ><ng-template #start
+    ><div class="actions">
+      <input
+        pInputText
+        aria-label="Buscar producto"
+        placeholder="Nombre o SKU"
+        [ngModel]="search()"
+        (ngModelChange)="search.set($event)"
+        (keydown.enter)="filter()"
+      /><p-select
+        ariaLabel="Disponibilidad"
+        [options]="stocks"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="low()"
+        (ngModelChange)="low.set($event); filter()"
+      /><p-button label="Buscar" [outlined]="true" (onClick)="filter()"
+        ><ng-template #icon
+          ><i class="pi pi-search catalog-icon" aria-hidden="true"></i></ng-template
+      ></p-button></div
+  ></ng-template>
+  <ng-template #end>
+    <div class="actions">
+      <p-button [text]="true" ariaLabel="Actualizar listado" (onClick)="facade.load()"
+        ><ng-template #icon
+          ><i class="pi pi-refresh catalog-icon" aria-hidden="true"></i></ng-template
+      ></p-button>
+    </div>
+  </ng-template>
+</p-toolbar>
+@if (facade.error()) {
+  <p-message severity="error">{{ facade.error() }}</p-message>
+}
+<p-table
+  [value]="facade.items()"
+  [loading]="facade.loading()"
+  [scrollable]="true"
+  [tableStyle]="{ 'min-width': '850px' }"
+  stripedRows
+  ><ng-template #header
+    ><tr>
+      <th>SKU</th>
+      <th>Producto</th>
+      <th>Stock actual</th>
+      <th>Mínimo</th>
+      <th>Estado</th>
+      <th class="catalog-actions-column">Operaciones</th>
+    </tr></ng-template
+  ><ng-template #body let-row
+    ><tr>
+      <td>{{ row.sku }}</td>
+      <td>{{ row.nombre }}</td>
+      <td>
+        <strong>{{ row.stock_actual }}</strong>
+      </td>
+      <td>{{ row.stock_minimo }}</td>
+      <td>
+        <p-tag
+          [value]="row.stock_bajo ? 'Stock bajo' : 'Disponible'"
+          [severity]="row.stock_bajo ? 'warn' : 'success'"
+        />
+      </td>
+      <td class="catalog-actions-column">
+        <div class="actions catalog-row-actions">
+          <p-button label="Entrada" [outlined]="true" (onClick)="show(row, 'ENTRADA')"
+            ><ng-template #icon
+              ><i class="pi pi-plus catalog-icon" aria-hidden="true"></i></ng-template></p-button
+          ><p-button label="Salida" [outlined]="true" (onClick)="show(row, 'SALIDA')"
+            ><ng-template #icon
+              ><i class="pi pi-minus catalog-icon" aria-hidden="true"></i></ng-template></p-button
+          ><p-button
+            label="Ajuste"
+            severity="secondary"
+            [text]="true"
+            (onClick)="show(row, 'AJUSTE')"
+          />
+          @if (user()?.rol === 'ADMIN') {
+            <p-button [text]="true" ariaLabel="Cambiar stock mínimo" (onClick)="show(row, 'MINIMO')"
+              ><ng-template #icon
+                ><i class="pi pi-cog catalog-icon" aria-hidden="true"></i></ng-template
+            ></p-button>
+          }
+        </div>
+      </td></tr></ng-template
+  ><ng-template #emptymessage
+    ><tr>
+      <td colspan="6" class="empty">No se encontraron productos.</td>
+    </tr></ng-template
+  ></p-table
+>
+<p-paginator
+  [first]="(facade.page() - 1) * facade.pageSize()"
+  [rows]="facade.pageSize()"
+  [totalRecords]="facade.total()"
+  [rowsPerPageOptions]="[10, 20, 50]"
+  (onPageChange)="paginate($event)"
+/>
+<p-dialog
+  [header]="mode() === 'MINIMO' ? 'Actualizar stock mínimo' : 'Registrar ' + mode().toLowerCase()"
+  [visible]="open()"
+  (visibleChange)="open.set($event)"
+  [modal]="true"
+  [closable]="!facade.operation.saving()"
+  [closeOnEscape]="!facade.operation.saving()"
+  [style]="{ width: '500px' }"
+  [draggable]="false"
+  [resizable]="false"
+  [contentStyle]="{ paddingBottom: '0' }"
+>
+  <div class="catalog-editor">
+    <section class="editor-card catalog-detail-card">
+      @if (selected(); as row) {
+        <p>
+          <strong>{{ row.nombre }}</strong> · {{ row.sku }}<br /><span class="muted"
+            >Stock actual: {{ row.stock_actual }} unidades</span
+          >
+        </p>
+      }
+      @if (facade.operation.error()) {
+        <p-message severity="error">{{ facade.operation.error() }}</p-message>
+      }
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        @if (mode() === 'AJUSTE') {
+          <p-message severity="info">Los ajustes requieren autorización del backend.</p-message>
+          <div class="field">
+            <label for="direction">Dirección</label
+            ><p-select
+              inputId="direction"
+              formControlName="direccion_ajuste"
+              [options]="directions"
+              optionLabel="label"
+              optionValue="value"
+              appendTo="body"
+            />
+          </div>
+        }
+        <div class="field">
+          <label for="quantity">{{ mode() === 'MINIMO' ? 'Stock mínimo' : 'Cantidad' }} *</label
+          ><p-inputnumber
+            inputId="quantity"
+            formControlName="cantidad"
+            [min]="mode() === 'MINIMO' ? 0 : 1"
+            [maxFractionDigits]="0"
+            [useGrouping]="false"
+          />
+          @if (form.controls.cantidad.touched && form.controls.cantidad.invalid) {
+            <small class="form-error">Ingresa una cantidad entera válida.</small>
+          }
+        </div>
+        @if (mode() !== 'MINIMO') {
+          <div class="field">
+            <label for="reason">Motivo *</label
+            ><textarea pTextarea id="reason" formControlName="motivo" rows="3"></textarea>
+            @if (form.controls.motivo.touched && form.controls.motivo.invalid) {
+              <small class="form-error">Escribe un motivo de 3 a 1000 caracteres.</small>
+            }
+          </div>
+        }
+        <footer class="editor-actions">
+          <button
+            type="button"
+            class="button-secondary"
+            [disabled]="facade.operation.saving()"
+            (click)="open.set(false)"
+          >
+            Cancelar
+          </button>
+          <p-button
+            type="submit"
+            label="Revisar y confirmar"
+            [loading]="facade.operation.saving()"
+            [disabled]="facade.operation.saving()"
+          />
+        </footer>
+      </form>
+    </section>
+  </div>
+</p-dialog>

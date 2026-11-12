@@ -1,0 +1,207 @@
+<div class="page-header">
+  <div>
+    <h1>Historial de ventas</h1>
+    <p class="subtitle">Consulta las operaciones registradas y sus pagos.</p>
+  </div>
+</div>
+<p-toolbar>
+  <ng-template #start>
+    <div class="actions">
+      @if (user()?.rol === 'ADMIN') {
+        <p-button label="Datos del negocio" [outlined]="true" (onClick)="configOpen.set(true)"
+          ><ng-template #icon><i class="pi pi-cog catalog-icon" aria-hidden="true"></i></ng-template
+        ></p-button>
+      }
+    </div>
+  </ng-template>
+  <ng-template #end>
+    <div class="actions">
+      <p-button ariaLabel="Actualizar listado" [text]="true" (onClick)="facade.load()"
+        ><ng-template #icon
+          ><i class="pi pi-refresh catalog-icon" aria-hidden="true"></i></ng-template
+      ></p-button>
+      <p-button label="Ir al punto de venta" routerLink="/pos"
+        ><ng-template #icon><i class="pi pi-plus catalog-icon" aria-hidden="true"></i></ng-template
+      ></p-button>
+    </div>
+  </ng-template>
+</p-toolbar>
+@if (facade.error()) {
+  <p-message severity="error">{{ facade.error() }}</p-message>
+}
+@if (pdfError()) {
+  <p-message severity="error">{{ pdfError() }}</p-message>
+}
+@if (facade.operation.error() && !cancelOpen()) {
+  <p-message severity="error">{{ facade.operation.error() }}</p-message>
+}
+<p-table
+  [value]="facade.items()"
+  [loading]="facade.loading()"
+  [scrollable]="true"
+  [tableStyle]="{ 'min-width': '800px' }"
+  stripedRows
+  ><ng-template #header
+    ><tr>
+      <th>Venta</th>
+      <th>Fecha</th>
+      <th>Cliente ID</th>
+      <th>Comprobante</th>
+      <th>Canal</th>
+      <th>Total</th>
+      <th>Estado</th>
+      <th class="catalog-actions-column">Acciones</th>
+    </tr></ng-template
+  ><ng-template #body let-row
+    ><tr>
+      <td>#{{ row.id_venta }}</td>
+      <td>{{ row.fecha_hora | date: 'dd/MM/yyyy HH:mm' }}</td>
+      <td>{{ row.comprobante?.receptor_nombre || '#' + row.id_cliente }}</td>
+      <td>
+        @if (row.comprobante; as doc) {
+          {{ doc.tipo }} {{ doc.serie }}-{{ doc.correlativo.toString().padStart(8, '0') }}
+        } @else {
+          <span class="muted">Sin comprobante</span>
+        }
+      </td>
+      <td>{{ row.canal_venta }}</td>
+      <td>{{ row.total | currency: 'PEN' : 'S/ ' }}</td>
+      <td>
+        <p-tag
+          [value]="row.estado"
+          [severity]="row.estado === 'CONFIRMADA' ? 'success' : 'danger'"
+        />
+      </td>
+      <td class="catalog-actions-column">
+        <div class="actions catalog-row-actions">
+          <p-button
+            label="Ver PDF"
+            [text]="true"
+            [disabled]="!row.comprobante || pdfLoading()"
+            (onClick)="openPdf(row)"
+            ><ng-template #icon
+              ><i
+                class="pi pi-file-pdf catalog-icon catalog-icon-neutral"
+                aria-hidden="true"
+              ></i></ng-template
+          ></p-button>
+          <p-button
+            ariaLabel="Ver venta"
+            [text]="true"
+            [disabled]="facade.detailLoading()"
+            (onClick)="show(row)"
+            ><ng-template #icon
+              ><i
+                class="pi pi-eye catalog-icon catalog-icon-neutral"
+                aria-hidden="true"
+              ></i></ng-template
+          ></p-button>
+          @if (user()?.rol === 'ADMIN' && row.estado === 'CONFIRMADA') {
+            <p-button
+              label="Cancelar"
+              severity="secondary"
+              [disabled]="facade.operation.saving()"
+              (onClick)="startCancel(row)"
+              [outlined]="true"
+            />
+          }
+        </div>
+      </td></tr></ng-template
+  ><ng-template #emptymessage
+    ><tr>
+      <td colspan="8" class="empty">No hay ventas en esta página.</td>
+    </tr></ng-template
+  ></p-table
+>
+<div class="actions justify-content-end mt-3">
+  <p-button
+    label="Anterior"
+    [outlined]="true"
+    [disabled]="facade.page() === 1 || facade.loading()"
+    (onClick)="facade.load(facade.page() - 1)"
+    ><ng-template #icon
+      ><i class="pi pi-angle-left catalog-icon" aria-hidden="true"></i></ng-template></p-button
+  ><span>Página {{ facade.page() }}</span
+  ><p-button
+    label="Siguiente"
+    [outlined]="true"
+    [disabled]="!facade.more() || facade.loading()"
+    (onClick)="facade.load(facade.page() + 1)"
+    ><ng-template #icon
+      ><i class="pi pi-angle-right catalog-icon" aria-hidden="true"></i></ng-template
+  ></p-button>
+</div>
+<p-dialog
+  header="Datos del negocio"
+  [visible]="configOpen()"
+  (visibleChange)="configOpen.set($event)"
+  [modal]="true"
+  [style]="{ width: '600px', maxWidth: '95vw' }"
+  [draggable]="false"
+  [resizable]="false"
+  [contentStyle]="{ paddingBottom: '0' }"
+>
+  <div class="catalog-editor">
+    <section class="editor-card catalog-detail-card">
+      @if (configOpen()) {
+        <app-document-config />
+      }
+    </section>
+  </div>
+</p-dialog>
+<p-dialog
+  header="Detalle de venta"
+  [visible]="detailOpen()"
+  (visibleChange)="detailOpen.set($event)"
+  [modal]="true"
+  [style]="{ width: '850px' }"
+  [draggable]="false"
+  [resizable]="false"
+  [contentStyle]="{ paddingBottom: '0' }"
+>
+  <div class="catalog-editor">
+    <section class="editor-card catalog-detail-card">
+      @if (facade.selected(); as sale) {
+        <app-sale-summary [sale]="sale" />
+      }
+    </section>
+  </div>
+</p-dialog>
+<p-dialog
+  header="Cancelar venta"
+  [visible]="cancelOpen()"
+  (visibleChange)="cancelOpen.set($event)"
+  [modal]="true"
+  [closable]="!facade.operation.saving()"
+  [closeOnEscape]="!facade.operation.saving()"
+  [style]="{ width: '500px' }"
+  [draggable]="false"
+  [resizable]="false"
+  [contentStyle]="{ paddingBottom: '0' }"
+>
+  <div class="catalog-editor">
+    <section class="editor-card catalog-detail-card">
+      <p-message severity="warn"
+        >La venta confirmada no se puede editar. La cancelación repone las existencias y revierte el
+        registro del pago.</p-message
+      >
+      @if (facade.operation.error()) {
+        <p-message severity="error">{{ facade.operation.error() }}</p-message>
+      }
+      <div class="field">
+        <label for="cancel-reason">Motivo de cancelación *</label
+        ><textarea pTextarea id="cancel-reason" [formControl]="reason" rows="4"></textarea>
+        @if (reason.touched && reason.invalid) {
+          <small class="form-error">Escribe un motivo de 3 a 1000 caracteres.</small>
+        }
+      </div>
+      <p-button
+        label="Revisar cancelación"
+        severity="danger"
+        [loading]="facade.operation.saving()"
+        [disabled]="facade.operation.saving()"
+        (onClick)="cancel()"
+      />
+    </section>
+  </div>
+</p-dialog>

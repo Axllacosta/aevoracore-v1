@@ -1,0 +1,39 @@
+.kardex-toolbar .p-toolbar {
+  align-items: flex-end;
+}
+.kardex-toolbar .p-toolbar-start {
+  flex: 1;
+  min-width: 0;
+}
+.kardex-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 145px), 1fr));
+  align-items: end;
+  gap: 0.75rem;
+  width: 100%;
+}
+.kardex-filters .field {
+  min-width: 0;
+}
+.kardex-filters
+  :is(
+    p-inputnumber,
+    p-select,
+    p-datepicker,
+    .p-inputnumber,
+    .p-datepicker,
+    .p-inputtext,
+    .p-select
+  ) {
+  width: 100%;
+  min-width: 0;
+}
+.kardex-filters > p-button .p-button {
+  width: 100%;
+}
+.kardex-filters :is(.p-inputtext, .p-select, .p-datepicker-dropdown, .p-button) {
+  height: 44px;
+}
+.kardex-filters .p-select {
+  align-items: center;
+}
